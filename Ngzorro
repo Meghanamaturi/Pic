@@ -1,132 +1,98 @@
-NzAnchorModule,
+.logo {
 
-NzAutocompleteModule,
+display: flex;
 
-NzAvatarModule,
+align-items: center;
 
-NzBackTopModule,
+height: 60px;
 
-NzBadgeModule,
+background: rgba(255, 255, 255, 0.2);
 
-NzButtonModule,
+margin: 16px;
 
-NzBreadCrumbModule,
+padding: 0 16px;
 
-NzCalendarModule,
+color: white;
 
-NzCardModule,
+.avatar {
 
-NzCarouselModule,
+width: 40px;
 
-NzCascaderModule,
+height: 40px;
 
-NzCheckboxModule,
+border-radius: 50%;
 
-NzCollapseModule,
+margin-right: 10px;
 
-NzCommentModule,
+}
 
-NzDatePickerModule,
+.user-info {
 
-NzDescriptionsModule,
-NzDividerModule,
+display: flex;
 
-NzDrawerModule,
+flex-direction: column;
 
-NzDropDownModule,
+}
 
-NzEmptyModule,
+.user-info strong {
 
-NzFormModule,
+font-size: 16px;
 
-NzGridModule,
+}
 
-NzI18nModule,
+user-info span {
 
-NzIconModule,
+}
 
-NzImageModule,
+layout {
 
-NzInputModule,
+min-height: 100vh;
 
-NzInputNumberModule,
+}
 
-NzLayoutModule,
+nz-sider (
 
-NzListModule,
+overflow: auto;
 
-NzMentionModule,
+height: 100%;
 
-NzMenuModule,
+position: fixed;
 
-NzMessageModule,
+left: 0;
 
-NzModalModule,
+}
 
-NzNoAnimationModule,
+.right-layout {
 
-NzNotificationModule,
+margin-left: 200px;
 
-NzPageHeaderModule,
+}
 
-NzPaginationModule,
-NzPopconfirm Module,
+niz-header (
 
-NzPopoverModule,
+padding: 0; height: 75px;
 
-NzProgressModule,
+}
 
-NzRadioModule,
+nz-content{
+margin: 24px 16px 0;
 
-NzRateModule,
+overflow: initial;
 
-NzResultModule,
+}
 
-NzSelectModule,
+.inner-content {
 
-NzSkeletonModule,
+padding: 24px;
 
-NzSliderModule,
+background:white;
 
-NzSpinModule,
+text-align: center;
 
-NzStatisticModule,
+}
 
-NzStepsModule,
+nz-footer {
 
-NzSwitchModule,
-NzTableModule,
+text-align: center;
 
-Nz TabsModule,
-
-NzTagModule,
-
-NzTimePickerModule,
-
-NzTimelineModule,
-
-NzToolTipModule,
-
-NzTransButtonModule,
-
-NzTransferModule,
-
-NzTreeModule,
-
-NzTreeViewModule,
-
-NzTreeSelectModule,
-
-Nz TypographyModule,
-
-NzUploadModule,
-
-NzWaveModule,
-
-NzResizableModule,
-
-NzPipesModule,
-
-NzSegmentedModule,
-
-NzModalModule
+}
