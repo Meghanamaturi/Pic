@@ -1,79 +1,57 @@
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.persistence.EntityNotFoundException;
 import yg.bootcamp.demo.dto.BudgetDto;
 import yg.bootcamp.demo.entity.Budget;
-import yg.bootcamp.demo.entity.Expense;
-import yg.bootcamp.demo.entity.User;
-import yg.bootcamp.demo.repository.BudgetRepository;
-import yg.bootcamp.demo.repository.ExpenseRepository;
-import yg.bootcamp.demo.repository.UserRepository;
+import yg.bootcamp.demo.service.BudgetService;
 
-@Service
-public class BudgetService {
+@RestController
+public class BudgetController {
 
     @Autowired
-    BudgetRepository budgetRepository;
+    BudgetService budgetService;
 
-    @Autowired
-    ExpenseRepository expenseRepository;
-
-    @Autowired
-    UserRepository userRepository;
-
-    public Budget postOrCreateBudget(BudgetDto budgetDto) {
-        Optional<User> userOptional = userRepository.findById(budgetDto.getUserId());
-        if (userOptional.isPresent()) {
-            return saveOrUpdateBudget(new Budget(), budgetDto, userOptional.get());
-        } else {
-            throw new EntityNotFoundException("User is not present with id: " + budgetDto.getUserId());
+    @PostMapping("/createbudget")
+    public ResponseEntity<?> postOrCreateBudget(@RequestBody BudgetDto dto) {
+        try {
+            Budget createdBudget = budgetService.postOrCreateBudget(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdBudget);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
-    public Budget saveOrUpdateBudget(Budget budget, BudgetDto budgetDto, User user) {
-        budget.setAmount(budgetDto.getAmount());
-        budget.setStartDate(budgetDto.getStartDate());
-        budget.setEndDate(budgetDto.getEndDate());
-        budget.setUser(user);  // Set the user
-        return budgetRepository.save(budget);
-    }
-
-    public Budget updateBudget(Integer id, BudgetDto budgetDto) {
-        Optional<Budget> optionalBudget = budgetRepository.findById(id);
-        if (optionalBudget.isPresent()) {
-            Optional<User> userOptional = userRepository.findById(budgetDto.getUserId());
-            if (userOptional.isPresent()) {
-                return saveOrUpdateBudget(optionalBudget.get(), budgetDto, userOptional.get());
-            } else {
-                throw new EntityNotFoundException("User is not present with id: " + budgetDto.getUserId());
-            }
-        } else {
-            throw new EntityNotFoundException("Budget is not present with id: " + id);
+    @PutMapping("/budget/{id}")
+    public ResponseEntity<?> updateBudget(@PathVariable Integer id, @RequestBody BudgetDto dto) {
+        try {
+            Budget updatedBudget = budgetService.updateBudget(id, dto);
+            return ResponseEntity.ok(updatedBudget);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
-    public String checkBudget(BudgetDto budgetDto) {
-        Optional<User> userOptional = userRepository.findById(budgetDto.getUserId());
-        if (!userOptional.isPresent()) {
-            throw new EntityNotFoundException("User is not present with id: " + budgetDto.getUserId());
-        }
-
-        User user = userOptional.get();
-        List<Expense> expenses = expenseRepository.findByUserId(user.getId()); // Fetch expenses by user ID
-
-        double amount = expenses.stream().mapToDouble(Expense::getAmount).sum();
-        
-        if (amount == budgetDto.getAmount()) {
-            return "You haven't saved anything.";
-        } else if (amount < budgetDto.getAmount()) {
-            return "Congratulations, you saved " + (budgetDto.getAmount() - amount) + " amount!";
-        } else {
-            return "You have exceeded your limit by " + (amount - budgetDto.getAmount()) + " amount.";
+    @PostMapping("/checkbudget")
+    public ResponseEntity<String> checkBudget(@RequestBody BudgetDto budgetDto) {
+        try {
+            String message = budgetService.checkBudget(budgetDto);
+            return ResponseEntity.ok(message);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 }
