@@ -1,84 +1,76 @@
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import jakarta.persistence.EntityNotFoundException;
-import yg.bootcamp.demo.repository.ExpenseRepository;
-import yg.bootcamp.demo.repository.UserRepository;
 import yg.bootcamp.demo.dto.ExpenseDTO;
 import yg.bootcamp.demo.entity.Expense;
-import yg.bootcamp.demo.entity.User;
+import yg.bootcamp.demo.service.ExpenseService;
 
-@Service
-public class ExpenseService {
+@RestController
+@CrossOrigin
+public class ExpenseController {
 
-    @Autowired
-    private ExpenseRepository repository;
+    @Autowired // Dependency Injection
+    private ExpenseService service;
 
-    @Autowired
-    private UserRepository userRepository;
-
+    @GetMapping("/expenses")
     public Iterable<Expense> getExpenses() {
-        return repository.findAll();
+        return service.getExpenses();
     }
 
-    public List<Expense> getAllExpenses() {
-        return StreamSupport.stream(repository.findAll().spliterator(), false)
-                .sorted(Comparator.comparing(Expense::getCreatedDate).reversed())
-                .collect(Collectors.toList());
+    @GetMapping("/expenses/user/{userId}")
+    public ResponseEntity<?> getExpensesByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(service.getExpensesByUserId(userId));
     }
 
-    public List<Expense> getExpensesByUserId(Long userId) {
-        return repository.findByUserId(userId);
-    }
-
-    public Expense postOrCreateExpense(ExpenseDTO expenseDTO) {
-        Optional<User> userOptional = userRepository.findById(expenseDTO.getUserId());
-        if (userOptional.isPresent()) {
-            Expense expense = new Expense();
-            return saveOrUpdateExpense(expense, expenseDTO, userOptional.get());
+    @PostMapping("/createexpense")
+    public ResponseEntity<?> postOrCreateExpense(@RequestBody ExpenseDTO dto) {
+        Expense createdExpense = service.postOrCreateExpense(dto);
+        if (createdExpense != null) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdExpense);
         } else {
-            throw new EntityNotFoundException("User is not present with id: " + expenseDTO.getUserId());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
-    public Expense saveOrUpdateExpense(Expense expense, ExpenseDTO expenseDTO, User user) {
-        expense.setExpenseName(expenseDTO.getExpenseName());
-        expense.setCreatedDate(expenseDTO.getCreatedDate());
-        expense.setAmount(expenseDTO.getAmount());
-        expense.setCategory(expenseDTO.getCategory());
-        expense.setDescription(expenseDTO.getDescription());
-        expense.setUser(user); // Associate the expense with the user
-        return repository.save(expense);
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllExpenses() {
+        return ResponseEntity.ok(service.getAllExpenses());
     }
 
-    public Expense getExpenseById(Integer id) {
-        Optional<Expense> optionalExpense = repository.findById(id);
-        if (optionalExpense.isPresent()) {
-            return optionalExpense.get();
-        } else {
-            throw new EntityNotFoundException("Expense is not present with id: " + id);
+    @GetMapping("/expense/{id}")
+    public ResponseEntity<?> getExpenseById(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(service.getExpenseById(id));
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
-    public Expense updateExpense(Integer id, ExpenseDTO expenseDTO) {
-        Optional<Expense> optionalExpense = repository.findById(id);
-        if (optionalExpense.isPresent()) {
-            User user = optionalExpense.get().getUser(); // Get the associated user
-            return saveOrUpdateExpense(optionalExpense.get(), expenseDTO, user);
-        } else {
-            throw new EntityNotFoundException("Expense is not present with id: " + id);
+    @PutMapping("/expense/{id}")
+    public ResponseEntity<?> updateExpense(@PathVariable Integer id, @RequestBody ExpenseDTO dto) {
+        try {
+            return ResponseEntity.ok(service.updateExpense(id, dto));
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
-    public void deleteExpense(Integer id) {
-        Optional<Expense> optionalExpense = repository.findById(id);
-        if (optionalExpense.isPresent()) {
-            repository.deleteById(id);
-        } else {
-            throw new EntityNotFoundException("Expense is not present with id: " + id);
+    @DeleteMapping("/expense/{id}")
+    public ResponseEntity<?> deleteExpense(@PathVariable Integer id) {
+        try {
+            service.deleteExpense(id);
+            return ResponseEntity.ok(null);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 }
