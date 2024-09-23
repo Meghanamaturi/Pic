@@ -1,50 +1,50 @@
-<div class="user-forms">
-  <nz-tabs nzType="card">
-    <nz-tab nzTitle="Login">
-      <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()">
-        <nz-form-item>
-          <nz-form-label [nzSpan]="6">Email</nz-form-label>
-          <nz-form-control [nzSpan]="14">
-            <input nz-input formControlName="email" placeholder="Enter your email">
-          </nz-form-control>
-        </nz-form-item>
-        
-        <nz-form-item>
-          <nz-form-label [nzSpan]="6">Password</nz-form-label>
-          <nz-form-control [nzSpan]="14">
-            <input nz-input type="password" formControlName="password" placeholder="Enter your password">
-          </nz-form-control>
-        </nz-form-item>
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-        <button nz-button nzType="primary" [disabled]="!loginForm.valid">Login</button>
-      </form>
-    </nz-tab>
+@Component({
+  selector: 'app-user',
+  templateUrl: './user.component.html',
+  styleUrls: ['./user.component.scss']
+})
+export class UserComponent implements OnInit {
+  loginForm!: FormGroup;
+  registerForm!: FormGroup;
 
-    <nz-tab nzTitle="Register">
-      <form [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
-        <nz-form-item>
-          <nz-form-label [nzSpan]="6">Username</nz-form-label>
-          <nz-form-control [nzSpan]="14">
-            <input nz-input formControlName="username" placeholder="Enter your username">
-          </nz-form-control>
-        </nz-form-item>
-        
-        <nz-form-item>
-          <nz-form-label [nzSpan]="6">Email</nz-form-label>
-          <nz-form-control [nzSpan]="14">
-            <input nz-input formControlName="email" placeholder="Enter your email">
-          </nz-form-control>
-        </nz-form-item>
+  constructor(private fb: FormBuilder) {}
 
-        <nz-form-item>
-          <nz-form-label [nzSpan]="6">Password</nz-form-label>
-          <nz-form-control [nzSpan]="14">
-            <input nz-input type="password" formControlName="password" placeholder="Enter your password">
-          </nz-form-control>
-        </nz-form-item>
+  ngOnInit(): void {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
 
-        <button nz-button nzType="primary" [disabled]="!registerForm.valid">Register</button>
-      </form>
-    </nz-tab>
-  </nz-tabs>
-</div>
+    this.registerForm = this.fb.group({
+      username: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
+  }
+
+  onLoginSubmit(): void {
+    if (this.loginForm.valid) {
+      console.log('Login Data:', this.loginForm.value);
+      // Handle login API call
+    }
+  }
+
+  onRegisterSubmit(): void {
+    if (this.registerForm.valid) {
+      console.log('Register Data:', this.registerForm.value);
+      // Handle registration API call
+    }
+  }
+}
+
+
+
+const routes: Routes = [
+  { path: '', component: DashboardComponent },
+  { path: 'income', component: IncomeComponent },
+  { path: 'expense', component: ExpenseComponent },
+  { path: 'user', component: UserComponent }  // Added route for User component
+];
