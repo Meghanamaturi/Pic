@@ -1,36 +1,50 @@
-<nz-layout class="layout">
-  <nz-sider>
-    <div class="logo">
-      <img src="https://www.w3schools.com/howto/img_avatar.png" alt="avatar" class="avatar">
-      <div class="user-info">
-        <strong>Root</strong>
-      </div>
-    </div>
-    <ul nz-menu nzTheme="dark" nzMode="inline">
-      <li nz-menu-item routerLink="/"> 
-        <span nz-icon nzType="dashboard"></span>
-        <span>Dashboard</span>
-      </li>
-      <li nz-menu-item routerLink="/income">
-        <span nz-icon nzType="fund"></span>
-        <span>Income</span>
-      </li>
-      <li nz-menu-item routerLink="/expense">
-        <span nz-icon nzType="fall"></span>
-        <span>Expense</span>
-      </li>
-      <li nz-menu-item routerLink="/user">
-        <span nz-icon nzType="user"></span>
-        <span>User</span> <!-- Added User link here -->
-      </li>
-    </ul>
-  </nz-sider>
+<div class="user-forms">
+  <nz-tabs nzType="card">
+    <nz-tab nzTitle="Login">
+      <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()">
+        <nz-form-item>
+          <nz-form-label [nzSpan]="6">Email</nz-form-label>
+          <nz-form-control [nzSpan]="14">
+            <input nz-input formControlName="email" placeholder="Enter your email">
+          </nz-form-control>
+        </nz-form-item>
+        
+        <nz-form-item>
+          <nz-form-label [nzSpan]="6">Password</nz-form-label>
+          <nz-form-control [nzSpan]="14">
+            <input nz-input type="password" formControlName="password" placeholder="Enter your password">
+          </nz-form-control>
+        </nz-form-item>
 
-  <nz-layout class="right-layout">
-    <nz-content>
-      <div class="inner-content">
-        <router-outlet></router-outlet>
-      </div>
-    </nz-content>
-  </nz-layout>
-</nz-layout>
+        <button nz-button nzType="primary" [disabled]="!loginForm.valid">Login</button>
+      </form>
+    </nz-tab>
+
+    <nz-tab nzTitle="Register">
+      <form [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()">
+        <nz-form-item>
+          <nz-form-label [nzSpan]="6">Username</nz-form-label>
+          <nz-form-control [nzSpan]="14">
+            <input nz-input formControlName="username" placeholder="Enter your username">
+          </nz-form-control>
+        </nz-form-item>
+        
+        <nz-form-item>
+          <nz-form-label [nzSpan]="6">Email</nz-form-label>
+          <nz-form-control [nzSpan]="14">
+            <input nz-input formControlName="email" placeholder="Enter your email">
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label [nzSpan]="6">Password</nz-form-label>
+          <nz-form-control [nzSpan]="14">
+            <input nz-input type="password" formControlName="password" placeholder="Enter your password">
+          </nz-form-control>
+        </nz-form-item>
+
+        <button nz-button nzType="primary" [disabled]="!registerForm.valid">Register</button>
+      </form>
+    </nz-tab>
+  </nz-tabs>
+</div>
