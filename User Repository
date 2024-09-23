@@ -1,57 +1,36 @@
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+<nz-layout class="layout">
+  <nz-sider>
+    <div class="logo">
+      <img src="https://www.w3schools.com/howto/img_avatar.png" alt="avatar" class="avatar">
+      <div class="user-info">
+        <strong>Root</strong>
+      </div>
+    </div>
+    <ul nz-menu nzTheme="dark" nzMode="inline">
+      <li nz-menu-item routerLink="/"> 
+        <span nz-icon nzType="dashboard"></span>
+        <span>Dashboard</span>
+      </li>
+      <li nz-menu-item routerLink="/income">
+        <span nz-icon nzType="fund"></span>
+        <span>Income</span>
+      </li>
+      <li nz-menu-item routerLink="/expense">
+        <span nz-icon nzType="fall"></span>
+        <span>Expense</span>
+      </li>
+      <li nz-menu-item routerLink="/user">
+        <span nz-icon nzType="user"></span>
+        <span>User</span> <!-- Added User link here -->
+      </li>
+    </ul>
+  </nz-sider>
 
-import jakarta.persistence.EntityNotFoundException;
-import yg.bootcamp.demo.dto.BudgetDto;
-import yg.bootcamp.demo.entity.Budget;
-import yg.bootcamp.demo.service.BudgetService;
-
-@RestController
-public class BudgetController {
-
-    @Autowired
-    BudgetService budgetService;
-
-    @PostMapping("/createbudget")
-    public ResponseEntity<?> postOrCreateBudget(@RequestBody BudgetDto dto) {
-        try {
-            Budget createdBudget = budgetService.postOrCreateBudget(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdBudget);
-        } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
-        }
-    }
-
-    @PutMapping("/budget/{id}")
-    public ResponseEntity<?> updateBudget(@PathVariable Integer id, @RequestBody BudgetDto dto) {
-        try {
-            Budget updatedBudget = budgetService.updateBudget(id, dto);
-            return ResponseEntity.ok(updatedBudget);
-        } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
-        }
-    }
-
-    @PostMapping("/checkbudget")
-    public ResponseEntity<String> checkBudget(@RequestBody BudgetDto budgetDto) {
-        try {
-            String message = budgetService.checkBudget(budgetDto);
-            return ResponseEntity.ok(message);
-        } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
-        }
-    }
-}
+  <nz-layout class="right-layout">
+    <nz-content>
+      <div class="inner-content">
+        <router-outlet></router-outlet>
+      </div>
+    </nz-content>
+  </nz-layout>
+</nz-layout>
