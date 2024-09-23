@@ -1,50 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+<form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+  <nz-form-item>
+    <nz-form-label [nzFor]="'username'">Username</nz-form-label>
+    <nz-form-control>
+      <input nz-input formControlName="username" id="'username'" />
+    </nz-form-control>
+  </nz-form-item>
 
-@Component({
-  selector: 'app-user',
-  templateUrl: './user.component.html',
-  styleUrls: ['./user.component.scss']
-})
-export class UserComponent implements OnInit {
-  loginForm!: FormGroup;
-  registerForm!: FormGroup;
+  <nz-form-item>
+    <nz-form-label [nzFor]="'email'">Email</nz-form-label>
+    <nz-form-control>
+      <input nz-input formControlName="email" id="email" />
+    </nz-form-control>
+  </nz-form-item>
 
-  constructor(private fb: FormBuilder) {}
+  <nz-form-item>
+    <nz-form-label [nzFor]="'password'">Password</nz-form-label>
+    <nz-form-control>
+      <input nz-input type="password" formControlName="password" id="password" />
+    </nz-form-control>
+  </nz-form-item>
 
-  ngOnInit(): void {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-    });
-
-    this.registerForm = this.fb.group({
-      username: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-    });
-  }
-
-  onLoginSubmit(): void {
-    if (this.loginForm.valid) {
-      console.log('Login Data:', this.loginForm.value);
-      // Handle login API call
-    }
-  }
-
-  onRegisterSubmit(): void {
-    if (this.registerForm.valid) {
-      console.log('Register Data:', this.registerForm.value);
-      // Handle registration API call
-    }
-  }
-}
-
-
-
-const routes: Routes = [
-  { path: '', component: DashboardComponent },
-  { path: 'income', component: IncomeComponent },
-  { path: 'expense', component: ExpenseComponent },
-  { path: 'user', component: UserComponent }  // Added route for User component
-];
+  <button nz-button [nzType]="'primary'" [disabled]="!registerForm.valid">Register</button>
+</form>
