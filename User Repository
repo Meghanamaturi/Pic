@@ -1,40 +1,44 @@
-public class UserDTO {
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
 
-    private Long id;
-    private String username;
-    private String email;
+@Service
+public class UserService {
 
-    // Constructors
-    public UserDTO() {}
+    @Autowired
+    private UserRepository userRepository;
 
-    public UserDTO(Long id, String username, String email) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
+    public UserDTO getUserById(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isPresent()) {
+            return mapToDTO(user.get());
+        }
+        throw new RuntimeException("User not found");
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    public UserDTO getUserByEmail(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent()) {
+            return mapToDTO(user.get());
+        }
+        throw new RuntimeException("User not found");
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public UserDTO createUser(UserDTO userDTO) {
+        User user = new User();
+        user.setUsername(userDTO.getUsername());
+        user.setEmail(userDTO.getEmail());
+        // Set password and other fields here
+        user = userRepository.save(user);
+        return mapToDTO(user);
     }
 
-    public String getUsername() {
-        return username;
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
+    // Utility method to convert User entity to UserDTO
+    private UserDTO mapToDTO(User user) {
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
     }
 }
