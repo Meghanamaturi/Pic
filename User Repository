@@ -1,17 +1,28 @@
-<form [formGroup]="loginForm" (ngSubmit)="onLogin()">
-  <nz-form-item>
-    <nz-form-label [nzFor]="'email'">Email</nz-form-label>
-    <nz-form-control>
-      <input nz-input formControlName="email" id="email" />
-    </nz-form-control>
-  </nz-form-item>
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UserService } from '../services/user.service';
+import { Router } from '@angular/router';
 
-  <nz-form-item>
-    <nz-form-label [nzFor]="'password'">Password</nz-form-label>
-    <nz-form-control>
-      <input nz-input type="password" formControlName="password" id="password" />
-    </nz-form-control>
-  </nz-form-item>
+@Component({
+  selector: 'app-user-login',
+  templateUrl: './user-login.component.html'
+})
+export class UserLoginComponent {
+  loginForm: FormGroup;
 
-  <button nz-button [nzType]="'primary'" [disabled]="!loginForm.valid">Login</button>
-</form>
+  constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
+    });
+  }
+
+  onLogin() {
+    if (this.loginForm.valid) {
+      this.userService.loginUser(this.loginForm.value).subscribe(response => {
+        // Store token, navigate to dashboard
+        this.router.navigate(['/dashboard']);
+      });
+    }
+  }
+}
