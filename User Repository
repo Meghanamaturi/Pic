@@ -1,20 +1,36 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+<ng-container *ngIf="currentPage === 'register'">
+  <app-registration (registerSuccess)="onRegisterSuccess()"></app-registration>
+</ng-container>
 
-@Injectable({
-  providedIn: 'root'
-})
-export class UserService {
-  private baseUrl = 'http://localhost:8080/api/users';
+<ng-container *ngIf="currentPage === 'login'">
+  <app-login (loginSuccess)="onLoginSuccess()"></app-login>
+</ng-container>
 
-  constructor(private http: HttpClient) {}
+<button (click)="goToLogin()">Already have an account? Login</button>
+<button (click)="goToRegister()">Create an account</button>
 
-  registerUser(userData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/register`, userData);
+
+
+
+
+
+
+export class AppComponent {
+  currentPage: 'register' | 'login' = 'register';
+
+  goToLogin() {
+    this.currentPage = 'login';
   }
 
-  loginUser(loginData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/login`, loginData);
+  goToRegister() {
+    this.currentPage = 'register';
+  }
+
+  onRegisterSuccess() {
+    this.goToLogin(); // Switch to login after successful registration
+  }
+
+  onLoginSuccess() {
+    // Handle successful login (e.g., redirect to dashboard)
   }
 }
