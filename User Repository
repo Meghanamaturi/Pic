@@ -34,3 +34,17 @@ export class AppComponent {
     // Handle successful login (e.g., redirect to dashboard)
   }
 }
+
+
+
+Optional<User> userOptional = userRepository.findByEmail(loginDto.getEmail());
+    if (userOptional.isPresent() && passwordMatches(loginDto.getPassword(), userOptional.get().getPassword())) {
+        return ResponseEntity.ok(userOptional.get());
+    }
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+}
+
+// Method to check password (hashing may be needed)
+private boolean passwordMatches(String rawPassword, String storedPassword) {
+    return rawPassword.equals(storedPassword); // Use a proper hashing method
+}
