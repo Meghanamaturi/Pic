@@ -1,30 +1,84 @@
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-@RestController
-@RequestMapping("/api/users")
-public class UserController {
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityNotFoundException;
+import yg.bootcamp.demo.repository.ExpenseRepository;
+import yg.bootcamp.demo.repository.UserRepository;
+import yg.bootcamp.demo.dto.ExpenseDTO;
+import yg.bootcamp.demo.entity.Expense;
+import yg.bootcamp.demo.entity.User;
+
+@Service
+public class ExpenseService {
 
     @Autowired
-    private UserService userService;
+    private ExpenseRepository repository;
 
-    @GetMapping("/{id}")
-    public UserDTO getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    @Autowired
+    private UserRepository userRepository;
+
+    public Iterable<Expense> getExpenses() {
+        return repository.findAll();
     }
 
-    @GetMapping("/email")
-    public UserDTO getUserByEmail(@RequestParam String email) {
-        return userService.getUserByEmail(email);
+    public List<Expense> getAllExpenses() {
+        return StreamSupport.stream(repository.findAll().spliterator(), false)
+                .sorted(Comparator.comparing(Expense::getCreatedDate).reversed())
+                .collect(Collectors.toList());
     }
 
-    @PostMapping
-    public UserDTO createUser(@RequestBody UserDTO userDTO) {
-        return userService.createUser(userDTO);
+    public List<Expense> getExpensesByUserId(Long userId) {
+        return repository.findByUserId(userId);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public Expense postOrCreateExpense(ExpenseDTO expenseDTO) {
+        Optional<User> userOptional = userRepository.findById(expenseDTO.getUserId());
+        if (userOptional.isPresent()) {
+            Expense expense = new Expense();
+            return saveOrUpdateExpense(expense, expenseDTO, userOptional.get());
+        } else {
+            throw new EntityNotFoundException("User is not present with id: " + expenseDTO.getUserId());
+        }
+    }
+
+    public Expense saveOrUpdateExpense(Expense expense, ExpenseDTO expenseDTO, User user) {
+        expense.setExpenseName(expenseDTO.getExpenseName());
+        expense.setCreatedDate(expenseDTO.getCreatedDate());
+        expense.setAmount(expenseDTO.getAmount());
+        expense.setCategory(expenseDTO.getCategory());
+        expense.setDescription(expenseDTO.getDescription());
+        expense.setUser(user); // Associate the expense with the user
+        return repository.save(expense);
+    }
+
+    public Expense getExpenseById(Integer id) {
+        Optional<Expense> optionalExpense = repository.findById(id);
+        if (optionalExpense.isPresent()) {
+            return optionalExpense.get();
+        } else {
+            throw new EntityNotFoundException("Expense is not present with id: " + id);
+        }
+    }
+
+    public Expense updateExpense(Integer id, ExpenseDTO expenseDTO) {
+        Optional<Expense> optionalExpense = repository.findById(id);
+        if (optionalExpense.isPresent()) {
+            User user = optionalExpense.get().getUser(); // Get the associated user
+            return saveOrUpdateExpense(optionalExpense.get(), expenseDTO, user);
+        } else {
+            throw new EntityNotFoundException("Expense is not present with id: " + id);
+        }
+    }
+
+    public void deleteExpense(Integer id) {
+        Optional<Expense> optionalExpense = repository.findById(id);
+        if (optionalExpense.isPresent()) {
+            repository.deleteById(id);
+        } else {
+            throw new EntityNotFoundException("Expense is not present with id: " + id);
+        }
     }
 }
