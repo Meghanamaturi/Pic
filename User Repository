@@ -1,28 +1,20 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UserService } from '../services/user.service';
-import { Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-@Component({
-  selector: 'app-user-login',
-  templateUrl: './user-login.component.html'
+@Injectable({
+  providedIn: 'root'
 })
-export class UserLoginComponent {
-  loginForm: FormGroup;
+export class UserService {
+  private baseUrl = 'http://localhost:8080/api/users';
 
-  constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required]
-    });
+  constructor(private http: HttpClient) {}
+
+  registerUser(userData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/register`, userData);
   }
 
-  onLogin() {
-    if (this.loginForm.valid) {
-      this.userService.loginUser(this.loginForm.value).subscribe(response => {
-        // Store token, navigate to dashboard
-        this.router.navigate(['/dashboard']);
-      });
-    }
+  loginUser(loginData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/login`, loginData);
   }
 }
