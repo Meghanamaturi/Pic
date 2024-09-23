@@ -1,44 +1,30 @@
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import java.util.Optional;
+import org.springframework.web.bind.annotation.*;
 
-@Service
-public class UserService {
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
-    public UserDTO getUserById(Long id) {
-        Optional<User> user = userRepository.findById(id);
-        if (user.isPresent()) {
-            return mapToDTO(user.get());
-        }
-        throw new RuntimeException("User not found");
+    @GetMapping("/{id}")
+    public UserDTO getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
-    public UserDTO getUserByEmail(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isPresent()) {
-            return mapToDTO(user.get());
-        }
-        throw new RuntimeException("User not found");
+    @GetMapping("/email")
+    public UserDTO getUserByEmail(@RequestParam String email) {
+        return userService.getUserByEmail(email);
     }
 
-    public UserDTO createUser(UserDTO userDTO) {
-        User user = new User();
-        user.setUsername(userDTO.getUsername());
-        user.setEmail(userDTO.getEmail());
-        // Set password and other fields here
-        user = userRepository.save(user);
-        return mapToDTO(user);
+    @PostMapping
+    public UserDTO createUser(@RequestBody UserDTO userDTO) {
+        return userService.createUser(userDTO);
     }
 
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
-    }
-
-    // Utility method to convert User entity to UserDTO
-    private UserDTO mapToDTO(User user) {
-        return new UserDTO(user.getId(), user.getUsername(), user.getEmail());
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
     }
 }
