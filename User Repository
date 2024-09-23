@@ -1,50 +1,49 @@
-<ng-container *ngIf="currentPage === 'register'">
-  <app-registration (registerSuccess)="onRegisterSuccess()"></app-registration>
-</ng-container>
+<nz-layout>
+  <ng-container *ngIf="isLoggedIn; else authPages">
+    <!-- Main Application Layout After Login -->
+    <nz-sider>
+      <div class="logo">
+        <img src="https://www.w3schools.com/howto/img_avatar.png" alt="avatar" class="avatar">
+        <div class="user-info">
+          <strong>Root</strong>
+        </div>
+      </div>
+      <ul nz-menu nzTheme="dark" nzMode="inline">
+        <li nz-menu-item routerLink="/dashboard"> 
+          <span nz-icon nzType="dashboard"></span>
+          <span>Dashboard</span>
+        </li>
+        <li nz-menu-item routerLink="/income">
+          <span nz-icon nzType="fund"></span>
+          <span>Income</span>
+        </li>
+        <li nz-menu-item routerLink="/expense">
+          <span nz-icon nzType="fall"></span>
+          <span>Expense</span>
+        </li>
+      </ul>
+    </nz-sider>
 
-<ng-container *ngIf="currentPage === 'login'">
-  <app-login (loginSuccess)="onLoginSuccess()"></app-login>
-</ng-container>
+    <nz-layout class="right-layout">
+      <nz-content>
+        <div class="inner-content">
+          <router-outlet></router-outlet>
+        </div>
+      </nz-content>
+    </nz-layout>
+  </ng-container>
 
-<button (click)="goToLogin()">Already have an account? Login</button>
-<button (click)="goToRegister()">Create an account</button>
+  <ng-template #authPages>
+    <!-- Login and Registration Pages -->
+    <ng-container *ngIf="currentPage === 'register'">
+      <app-user-registration (registerSuccess)="onRegisterSuccess()"></app-user-registration>
+    </ng-container>
 
+    <ng-container *ngIf="currentPage === 'login'">
+      <app-user-login (loginSuccess)="onLoginSuccess()"></app-user-login>
+    </ng-container>
 
-
-
-
-
-
-export class AppComponent {
-  currentPage: 'register' | 'login' = 'register';
-
-  goToLogin() {
-    this.currentPage = 'login';
-  }
-
-  goToRegister() {
-    this.currentPage = 'register';
-  }
-
-  onRegisterSuccess() {
-    this.goToLogin(); // Switch to login after successful registration
-  }
-
-  onLoginSuccess() {
-    // Handle successful login (e.g., redirect to dashboard)
-  }
-}
-
-
-
-Optional<User> userOptional = userRepository.findByEmail(loginDto.getEmail());
-    if (userOptional.isPresent() && passwordMatches(loginDto.getPassword(), userOptional.get().getPassword())) {
-        return ResponseEntity.ok(userOptional.get());
-    }
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-}
-
-// Method to check password (hashing may be needed)
-private boolean passwordMatches(String rawPassword, String storedPassword) {
-    return rawPassword.equals(storedPassword); // Use a proper hashing method
-}
+    <button (click)="goToLogin()">Already have an account? Login</button>
+    <button (click)="goToRegister()">Create an account</button>
+  </ng-template>
+</nz-layout>
