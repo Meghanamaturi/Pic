@@ -1,91 +1,80 @@
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.persistence.EntityNotFoundException;
-import yg.bootcamp.demo.repository.IncomeRepository;
-import yg.bootcamp.demo.repository.UserRepository;
+
 import yg.bootcamp.demo.dto.IncomeDTO;
 import yg.bootcamp.demo.entity.Income;
-import yg.bootcamp.demo.entity.User;
+import yg.bootcamp.demo.service.IncomeService;
 
-@Service
-public class IncomeService {
+@RestController
+@CrossOrigin
+public class IncomeController {
 
-    @Autowired
-    IncomeRepository repository;
-
-    @Autowired
-    UserRepository userRepository;
+    @Autowired // Dependency Injection
+    IncomeService service;
 
     // Get all incomes
+    @GetMapping("/incomes")
     public Iterable<Income> getIncomes() {
-        return repository.findAll();
+        return service.getIncomes();
     }
 
-    // Get all incomes sorted by creation date, in reverse order
-    public List<Income> getAllIncomes() {
-        return StreamSupport.stream(repository.findAll().spliterator(), false)
-                .sorted(Comparator.comparing(Income::getCreatedDate).reversed())
-                .collect(Collectors.toList());
-    }
-
-    // Create or post income by userId
-    public Income postOrCreateIncome(IncomeDTO incomeDTO) {
-        Optional<User> userOptional = userRepository.findById(incomeDTO.getUserId());
-        if (userOptional.isPresent()) {
-            return saveOrUpdateIncome(new Income(), incomeDTO, userOptional.get());
-        } else {
-            throw new EntityNotFoundException("User not found with id: " + incomeDTO.getUserId());
+    // Create income based on userId from IncomeDTO
+    @PostMapping("/createincome")
+    public ResponseEntity<?> postOrCreateIncome(@RequestBody IncomeDTO dto) {
+        try {
+            Income createdIncome = service.postOrCreateIncome(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdIncome);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
-    // Save or update income by linking to a user
-    public Income saveOrUpdateIncome(Income income, IncomeDTO incomeDTO, User user) {
-        income.setIncomeName(incomeDTO.getIncomeName());
-        income.setCreatedDate(incomeDTO.getCreatedDate());
-        income.setDescription(incomeDTO.getDescription());
-        income.setAmount(incomeDTO.getAmount());
-        income.setCategory(incomeDTO.getCategory());
-        income.setUser(user); // Link income to the user
-        return repository.save(income);
+    // Get all incomes sorted by creation date in reverse order
+    @GetMapping("/allincomes")
+    public ResponseEntity<?> getAllIncomes() {
+        return ResponseEntity.ok(service.getAllIncomes());
     }
 
     // Get income by ID
-    public Income getIncomeById(Integer id) {
-        Optional<Income> optionalIncome = repository.findById(id);
-        if (optionalIncome.isPresent()) {
-            return optionalIncome.get();
-        } else {
-            throw new EntityNotFoundException("Income not found with id: " + id);
+    @GetMapping("/income/{id}")
+    public ResponseEntity<?> getIncomeById(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(service.getIncomeById(id));
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
-    // Update income by ID
-    public Income updateIncome(Integer id, IncomeDTO incomeDTO) {
-        Optional<Income> optionalIncome = repository.findById(id);
-        if (optionalIncome.isPresent()) {
-            Optional<User> userOptional = userRepository.findById(incomeDTO.getUserId());
-            if (userOptional.isPresent()) {
-                return saveOrUpdateIncome(optionalIncome.get(), incomeDTO, userOptional.get());
-            } else {
-                throw new EntityNotFoundException("User not found with id: " + incomeDTO.getUserId());
-            }
-        } else {
-            throw new EntityNotFoundException("Income not found with id: " + id);
+    // Update income by ID and userId
+    @PutMapping("/income/{id}")
+    public ResponseEntity<?> updateIncome(@PathVariable Integer id, @RequestBody IncomeDTO dto) {
+        try {
+            return ResponseEntity.ok(service.updateIncome(id, dto));
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 
     // Delete income by ID
-    public void deleteIncome(Integer id) {
-        Optional<Income> optionalIncome = repository.findById(id);
-        if (optionalIncome.isPresent()) {
-            repository.deleteById(id);
-        } else {
-            throw new EntityNotFoundException("Income not found with id: " + id);
+    @DeleteMapping("/income/{id}")
+    public ResponseEntity<?> deleteIncome(@PathVariable Integer id) {
+        try {
+            service.deleteIncome(id);
+            return ResponseEntity.ok(null);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }
 }
