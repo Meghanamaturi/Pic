@@ -1,55 +1,40 @@
-<div class="login-container">
-    <h2>User Login</h2>
-    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
-        <div>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" ngModel required>
-        </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" ngModel required>
-        </div>
-        <button type="submit">Login</button>
-    </form>
-    <button (click)="goToRegister()">Create an account</button>
-</div>
+.app-container {
+    display: flex;
+}
 
+.sidebar {
+    width: 200px;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
 
+.menu {
+    list-style-type: none;
+    padding: 0;
+}
 
+.menu li {
+    cursor: pointer;
+    padding: 10px;
+}
 
+.content {
+    flex-grow: 1;
+    padding: 20px;
+}
 
+.registration-container,
+.login-container {
+    margin: 20px;
+}
 
-<div class="app-container">
-    <div *ngIf="isLoggedIn; else authPages">
-        <div class="sidebar">
-            <div class="logo">
-                <img src="https://www.w3schools.com/howto/img_avatar.png" alt="avatar" class="avatar">
-                <div class="user-info">
-                    <strong>{{ userName }}</strong>
-                </div>
-            </div>
-            <ul class="menu">
-                <li (click)="goToDashboard()">Dashboard</li>
-                <li (click)="goToIncome()">Income</li>
-                <li (click)="goToExpense()">Expense</li>
-            </ul>
-        </div>
+.registration-container form,
+.login-container form {
+    display: flex;
+    flex-direction: column;
+}
 
-        <div class="content">
-            <router-outlet></router-outlet> <!-- This will render the routed components -->
-        </div>
-    </div>
-
-    <ng-template #authPages>
-        <ng-container *ngIf="currentPage === 'register'">
-            <app-user-registration (registerSuccess)="onRegisterSuccess()"></app-user-registration>
-        </ng-container>
-
-        <ng-container *ngIf="currentPage === 'login'">
-            <app-user-login (loginSuccess)="onLoginSuccess()"></app-user-login>
-        </ng-container>
-
-        <button (click)="goToLogin()">Already have an account? Login</button>
-        <button (click)="goToRegister()">Create an account</button>
-    </ng-template>
-</div>
+.registration-container div,
+.login-container div {
+    margin-bottom: 10px;
+}
