@@ -1,49 +1,32 @@
-<nz-layout>
-  <ng-container *ngIf="isLoggedIn; else authPages">
-    <!-- Main Application Layout After Login -->
-    <nz-sider>
-      <div class="logo">
-        <img src="https://www.w3schools.com/howto/img_avatar.png" alt="avatar" class="avatar">
-        <div class="user-info">
-          <strong>Root</strong>
-        </div>
-      </div>
-      <ul nz-menu nzTheme="dark" nzMode="inline">
-        <li nz-menu-item routerLink="/dashboard"> 
-          <span nz-icon nzType="dashboard"></span>
-          <span>Dashboard</span>
-        </li>
-        <li nz-menu-item routerLink="/income">
-          <span nz-icon nzType="fund"></span>
-          <span>Income</span>
-        </li>
-        <li nz-menu-item routerLink="/expense">
-          <span nz-icon nzType="fall"></span>
-          <span>Expense</span>
-        </li>
-      </ul>
-    </nz-sider>
+<nz-layout class="registration-layout">
+  <nz-card>
+    <nz-form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>Name</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your name!">
+          <input nz-input formControlName="name" placeholder="Enter your name" />
+        </nz-form-control>
+      </nz-form-item>
 
-    <nz-layout class="right-layout">
-      <nz-content>
-        <div class="inner-content">
-          <router-outlet></router-outlet>
-        </div>
-      </nz-content>
-    </nz-layout>
-  </ng-container>
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>Email</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your email!">
+          <input nz-input formControlName="email" placeholder="Enter your email" />
+        </nz-form-control>
+      </nz-form-item>
 
-  <ng-template #authPages>
-    <!-- Login and Registration Pages -->
-    <ng-container *ngIf="currentPage === 'register'">
-      <app-user-registration (registerSuccess)="onRegisterSuccess()"></app-user-registration>
-    </ng-container>
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>Password</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your password!">
+          <input nz-input type="password" formControlName="password" placeholder="Enter your password" />
+        </nz-form-control>
+      </nz-form-item>
 
-    <ng-container *ngIf="currentPage === 'login'">
-      <app-user-login (loginSuccess)="onLoginSuccess()"></app-user-login>
-    </ng-container>
-
-    <button (click)="goToLogin()">Already have an account? Login</button>
-    <button (click)="goToRegister()">Create an account</button>
-  </ng-template>
+      <nz-form-item>
+        <nz-form-control [nzSpan]="14" [nzOffset]="6">
+          <button nz-button nzType="primary" [disabled]="!registerForm.valid">Register</button>
+        </nz-form-control>
+      </nz-form-item>
+    </nz-form>
+  </nz-card>
 </nz-layout>
