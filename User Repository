@@ -1,32 +1,19 @@
-<nz-layout class="registration-layout">
-  <nz-card>
-    <nz-form [formGroup]="registerForm" (ngSubmit)="onRegister()">
-      <nz-form-item>
-        <nz-form-label [nzSpan]="6" nzRequired>Name</nz-form-label>
-        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your name!">
-          <input nz-input formControlName="name" placeholder="Enter your name" />
-        </nz-form-control>
-      </nz-form-item>
-
-      <nz-form-item>
-        <nz-form-label [nzSpan]="6" nzRequired>Email</nz-form-label>
-        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your email!">
-          <input nz-input formControlName="email" placeholder="Enter your email" />
-        </nz-form-control>
-      </nz-form-item>
-
-      <nz-form-item>
-        <nz-form-label [nzSpan]="6" nzRequired>Password</nz-form-label>
-        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your password!">
-          <input nz-input type="password" formControlName="password" placeholder="Enter your password" />
-        </nz-form-control>
-      </nz-form-item>
-
-      <nz-form-item>
-        <nz-form-control [nzSpan]="14" [nzOffset]="6">
-          <button nz-button nzType="primary" [disabled]="!registerForm.valid">Register</button>
-        </nz-form-control>
-      </nz-form-item>
-    </nz-form>
-  </nz-card>
-</nz-layout>
+<div class="registration-container">
+    <h2>User Registration</h2>
+    <form (ngSubmit)="onRegister()" #registrationForm="ngForm">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" ngModel required>
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" ngModel required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" ngModel required>
+        </div>
+        <button type="submit">Register</button>
+    </form>
+    <button (click)="goToLogin()">Already have an account? Login</button>
+</div>
