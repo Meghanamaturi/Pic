@@ -1,65 +1,25 @@
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.stereotype.Component;
+(nz-cari nzType-inner" nzTitle "Income">
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
+edivnz-row
 
-@Component
-public class JwtUtil {
+cdiv nz-col nzxs="2" nz5m="4" nzkd="6" nzig="8" nzX1="10"> Minimum: ((stats?.minIncome)]</div
 
-    private String SECRET_KEY = "secret";  // Change this to a strong secret key
+cdiv nz-col nzxs-"20" nz5m 16" nzMd-"12" nzlg-8" nzxl-"4"></div>
 
-    // Generate token for user
-    public String generateToken(String username) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username);
-    }
+cdiv nz-col nexs="2" nz5m="4" nzmd="6" n21g="" nzx1="10">Maximum: ((stats?.maxIncome))</div>
 
-    // Create token
-    private String createToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))  // 10 hours expiration
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
-                .compact();
-    }
+</div
 
-    // Validate token
-    public Boolean validateToken(String token, String username) {
-        final String tokenUsername = extractUsername(token);
-        return (tokenUsername.equals(username) && !isTokenExpired(token));
-    }
+</nz-cards
 
-    // Extract username from token
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
+cnz-card nztype="inner" nztitle="Expense">
 
-    // Extract expiration date from token
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
+div nz-row
 
-    // Extract any claim from the token
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
+<div nz-col nzxs-2" nzSm-4" nzMd-"6" nzig" nzX1="10">Minimum: ((stats?.minExpense)}</div>
 
-    // Get all claims for the token
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
-    }
+cdiv nz-col nzXs-"20" nz5m-"16" nzMd-"12" nzig-"" n2X1-"4"></div>
 
-    // Check if the token has expired
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-}
-1f8ac10f23c5b5bc1167bda84b833e5c057a77d2e50e3ba5d9e61b39bc22e429
+cdiv nz-col nzXs="2" nz5m4" nzMd="6" nzig"a" nzXl="10">Maximum: ((stats?.maxExpense)}</div>
+
+c/uz-cards
