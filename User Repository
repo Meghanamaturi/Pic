@@ -1,160 +1,53 @@
-package yg.bootcamp.demo.controller;
+checkBudget(budgetId: number) {
+    const userId = localStorage.getItem("Id");
+    if (userId != null) {
+        const id: number = parseInt(userId, 10);
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import yg.bootcamp.demo.config.JwtUtil;
-import yg.bootcamp.demo.dto.LoginDTO;
-import yg.bootcamp.demo.dto.LoginResponseDTO;
-import yg.bootcamp.demo.dto.UserDTO;
-import yg.bootcamp.demo.entity.User;
-import yg.bootcamp.demo.repository.UserRepository;
-import yg.bootcamp.demo.service.UserService;
+        this.budgetService.checkBudget(budgetId, id).subscribe(res => {
+            let totalExpenses = 0;
+            let content = '<br>';
 
-import java.util.Optional;
+            // Calculate total expenses and build the content string
+            res.forEach((expense: any, index: number) => {
+                totalExpenses += expense.amount;
+                content += `${index + 1}. Amount: ${expense.amount}, Date: ${expense.date}, Description: ${expense.description}, Category: ${expense.category}<br>`;
+            });
 
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+            // Fetch the budget amount and compare it with total expenses
+            this.budgetService.getBudgetAmountById(budgetId).subscribe(budgetAmount => {
+                console.log("Total expense:", totalExpenses);
+                console.log("Budget amount:", budgetAmount);
 
-@WebMvcTest(UserController.class)
-public class UserControllerTest {
+                let result: number = Number(budgetAmount);  // Convert the budget amount to a number
+                let comparisonMessage: string;
 
-    @Autowired
-    private MockMvc mockMvc;
+                // Comparison logic
+                if (totalExpenses < result) {
+                    comparisonMessage = `You have saved $${(result - totalExpenses).toFixed(2)}.`;
+                } else if (totalExpenses > result) {
+                    comparisonMessage = `You have exceeded the budget by $${(totalExpenses - result).toFixed(2)}.`;
+                } else {
+                    comparisonMessage = "You have perfectly matched your budget!";
+                }
 
-    @MockBean
-    private UserService userService;
+                console.log(comparisonMessage);
 
-    @MockBean
-    private UserRepository userRepository;
+                // Add the comparison message to the content
+                content += `<b>Result:</b> ${comparisonMessage}<br>`;
 
-    @MockBean
-    private JwtUtil jwtUtil;
+                // Show the result in the modal
+                this.modal.confirm({
+                    nzTitle: 'Expense Details',
+                    nzContent: content,
+                    nzOnOk: () => console.log('OK clicked')
+                });
 
-    @BeforeEach
-    void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController()).build();
+            }, error => {
+                this.message.error("Error while getting budget amount", { nzDuration: 5000 });
+            });
+
+        }, error => {
+            this.message.error("Error while checking budget", { nzDuration: 5000 });
+        });
     }
-
-    @Test
-    public void testGetUserById() throws Exception {
-        int userId = 1;
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(userId);
-        userDTO.setUsername("testuser");
-
-        when(userService.getUserById(userId)).thenReturn(userDTO);
-
-        mockMvc.perform(get("/api/users/{id}", userId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userId))
-                .andExpect(jsonPath("$.username").value("testuser"));
-    }
-
-    @Test
-    public void testCreateUser() throws Exception {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("testuser");
-        userDTO.setEmail("test@example.com");
-
-        when(userService.createUser(Mockito.any(UserDTO.class))).thenReturn(userDTO);
-
-        String requestBody = "{ \"username\": \"testuser\", \"email\": \"test@example.com\" }";
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com"));
-    }
-
-    @Test
-    public void testLogin() throws Exception {
-        LoginDTO loginDTO = new LoginDTO();
-        loginDTO.setEmail("test@example.com");
-        loginDTO.setPassword("password123");
-
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setPassword("password123");
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(jwtUtil.generateToken("testuser")).thenReturn("mocked-token");
-
-        String requestBody = "{ \"email\": \"test@example.com\", \"password\": \"password123\" }";
-
-        mockMvc.perform(post("/api/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("mocked-token"));
-    }
-
-    @Test
-    public void testDeleteUser() throws Exception {
-        int userId = 1;
-
-        mockMvc.perform(delete("/api/users/{id}", userId))
-                .andExpect(status().isOk());
-    }
-}
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-test</artifactId>
-    <scope>test</scope>
-</dependency>
-
-<dependency>
-    <groupId>org.mockito</groupId>
-    <artifactId>mockito-core</artifactId>
-    <scope>test</scope>
-</dependency>
-
-<dependency>
-    <groupId>org.mockito</groupId>
-    <artifactId>mockito-junit-jupiter</artifactId>
-    <scope>test</scope>
-</dependency>
-this.modal.confirm({
-                            nzTitle: 'Budget Details',
-                            nzContent: `<pre>${JSON.stringify(res, null, 2)}</pre>`,  // Display formatted response
-                            nzOnOk: () => console.log('OK clicked')  // You can define actions here if needed
-                        });
-let content = 'Expense Details:\n';
-                        res.forEach((expense: any, index: number) => {
-                            content += `${index + 1}. Amount: ${expense.amount}, Date: ${expense.date}, Description: ${expense.description}\n`;
-                        });
-e = '';
-                        if (totalExpenses < budget.amount) {
-                            comparisonMessage = `You have saved ${(budget.amount - totalExpenses).toFixed(2)}.`;
-                        } else if (totalExpenses > budget.amount) {
-                            comparisonMessage = `You have exceeded the budget by ${(totalExpenses - budget.amount).toFixed(2)}.`;
-                        } else {
-                            comparisonMessage = `You have perfectly matched your budget!`;
-                        }
-
-                        // Append the comparison message
-                        content += `<br><b>Total Expenses:</b> ${totalExpenses.toFixed(2)}<br>`;
-                        content += `<b>Budget Amount:</b> ${budget.amount.toFixed(2)}<br>`;
-                        content += `<b>Result:</b> ${comparisonMessage}<br>`;
-getBudgetAmountById(budgetId: number): Observable<number> {
-    return this.http.get<{ amount: number }>(`${BASIC_URL}budgetnumber/${budgetId}`)
-        .pipe(
-            map(response => response.amount),  // Extract the 'amount' field from the response
-            tap(amount => console.log("get budget amount:", amount)),  // Log the extracted amount
-            catchError(error => {
-                console.error("Error getting budget amount:", error);
-                return throwError(error);  // Handle errors
-            })
-        );
 }
