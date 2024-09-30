@@ -125,3 +125,8 @@ public class UserControllerTest {
     <artifactId>mockito-junit-jupiter</artifactId>
     <scope>test</scope>
 </dependency>
+this.modal.confirm({
+                            nzTitle: 'Budget Details',
+                            nzContent: `<pre>${JSON.stringify(res, null, 2)}</pre>`,  // Display formatted response
+                            nzOnOk: () => console.log('OK clicked')  // You can define actions here if needed
+                        });
