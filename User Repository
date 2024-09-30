@@ -147,3 +147,14 @@ e = '';
                         content += `<br><b>Total Expenses:</b> ${totalExpenses.toFixed(2)}<br>`;
                         content += `<b>Budget Amount:</b> ${budget.amount.toFixed(2)}<br>`;
                         content += `<b>Result:</b> ${comparisonMessage}<br>`;
+getBudgetAmountById(budgetId: number): Observable<number> {
+    return this.http.get<{ amount: number }>(`${BASIC_URL}budgetnumber/${budgetId}`)
+        .pipe(
+            map(response => response.amount),  // Extract the 'amount' field from the response
+            tap(amount => console.log("get budget amount:", amount)),  // Log the extracted amount
+            catchError(error => {
+                console.error("Error getting budget amount:", error);
+                return throwError(error);  // Handle errors
+            })
+        );
+}
