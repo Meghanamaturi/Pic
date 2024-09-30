@@ -134,3 +134,16 @@ let content = 'Expense Details:\n';
                         res.forEach((expense: any, index: number) => {
                             content += `${index + 1}. Amount: ${expense.amount}, Date: ${expense.date}, Description: ${expense.description}\n`;
                         });
+e = '';
+                        if (totalExpenses < budget.amount) {
+                            comparisonMessage = `You have saved ${(budget.amount - totalExpenses).toFixed(2)}.`;
+                        } else if (totalExpenses > budget.amount) {
+                            comparisonMessage = `You have exceeded the budget by ${(totalExpenses - budget.amount).toFixed(2)}.`;
+                        } else {
+                            comparisonMessage = `You have perfectly matched your budget!`;
+                        }
+
+                        // Append the comparison message
+                        content += `<br><b>Total Expenses:</b> ${totalExpenses.toFixed(2)}<br>`;
+                        content += `<b>Budget Amount:</b> ${budget.amount.toFixed(2)}<br>`;
+                        content += `<b>Result:</b> ${comparisonMessage}<br>`;
