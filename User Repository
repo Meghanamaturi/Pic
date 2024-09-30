@@ -130,3 +130,7 @@ this.modal.confirm({
                             nzContent: `<pre>${JSON.stringify(res, null, 2)}</pre>`,  // Display formatted response
                             nzOnOk: () => console.log('OK clicked')  // You can define actions here if needed
                         });
+let content = 'Expense Details:\n';
+                        res.forEach((expense: any, index: number) => {
+                            content += `${index + 1}. Amount: ${expense.amount}, Date: ${expense.date}, Description: ${expense.description}\n`;
+                        });
