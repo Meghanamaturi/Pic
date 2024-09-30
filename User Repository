@@ -1,25 +1,110 @@
-(nz-cari nzType-inner" nzTitle "Income">
+package yg.bootcamp.demo.controller;
 
-edivnz-row
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import yg.bootcamp.demo.config.JwtUtil;
+import yg.bootcamp.demo.dto.LoginDTO;
+import yg.bootcamp.demo.dto.LoginResponseDTO;
+import yg.bootcamp.demo.dto.UserDTO;
+import yg.bootcamp.demo.entity.User;
+import yg.bootcamp.demo.repository.UserRepository;
+import yg.bootcamp.demo.service.UserService;
 
-cdiv nz-col nzxs="2" nz5m="4" nzkd="6" nzig="8" nzX1="10"> Minimum: ((stats?.minIncome)]</div
+import java.util.Optional;
 
-cdiv nz-col nzxs-"20" nz5m 16" nzMd-"12" nzlg-8" nzxl-"4"></div>
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-cdiv nz-col nexs="2" nz5m="4" nzmd="6" n21g="" nzx1="10">Maximum: ((stats?.maxIncome))</div>
+@WebMvcTest(UserController.class)
+public class UserControllerTest {
 
-</div
+    @Autowired
+    private MockMvc mockMvc;
 
-</nz-cards
+    @MockBean
+    private UserService userService;
 
-cnz-card nztype="inner" nztitle="Expense">
+    @MockBean
+    private UserRepository userRepository;
 
-div nz-row
+    @MockBean
+    private JwtUtil jwtUtil;
 
-<div nz-col nzxs-2" nzSm-4" nzMd-"6" nzig" nzX1="10">Minimum: ((stats?.minExpense)}</div>
+    @BeforeEach
+    void setup() {
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController()).build();
+    }
 
-cdiv nz-col nzXs-"20" nz5m-"16" nzMd-"12" nzig-"" n2X1-"4"></div>
+    @Test
+    public void testGetUserById() throws Exception {
+        int userId = 1;
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(userId);
+        userDTO.setUsername("testuser");
 
-cdiv nz-col nzXs="2" nz5m4" nzMd="6" nzig"a" nzXl="10">Maximum: ((stats?.maxExpense)}</div>
+        when(userService.getUserById(userId)).thenReturn(userDTO);
 
-c/uz-cards
+        mockMvc.perform(get("/api/users/{id}", userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId))
+                .andExpect(jsonPath("$.username").value("testuser"));
+    }
+
+    @Test
+    public void testCreateUser() throws Exception {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername("testuser");
+        userDTO.setEmail("test@example.com");
+
+        when(userService.createUser(Mockito.any(UserDTO.class))).thenReturn(userDTO);
+
+        String requestBody = "{ \"username\": \"testuser\", \"email\": \"test@example.com\" }";
+
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("testuser"))
+                .andExpect(jsonPath("$.email").value("test@example.com"));
+    }
+
+    @Test
+    public void testLogin() throws Exception {
+        LoginDTO loginDTO = new LoginDTO();
+        loginDTO.setEmail("test@example.com");
+        loginDTO.setPassword("password123");
+
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setPassword("password123");
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(jwtUtil.generateToken("testuser")).thenReturn("mocked-token");
+
+        String requestBody = "{ \"email\": \"test@example.com\", \"password\": \"password123\" }";
+
+        mockMvc.perform(post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("mocked-token"));
+    }
+
+    @Test
+    public void testDeleteUser() throws Exception {
+        int userId = 1;
+
+        mockMvc.perform(delete("/api/users/{id}", userId))
+                .andExpect(status().isOk());
+    }
+}
