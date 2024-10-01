@@ -1,132 +1,218 @@
 package yg.bootcamp.demo.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import yg.bootcamp.demo.dto.UserDTO;
+import yg.bootcamp.demo.dto.IncomeDTO;
+import yg.bootcamp.demo.entity.Income;
 import yg.bootcamp.demo.entity.User;
-import yg.bootcamp.demo.repository.ExpenseRepository;
+import yg.bootcamp.demo.repository.IncomeRepository;
 import yg.bootcamp.demo.repository.UserRepository;
 
-import java.util.Optional;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-class UserServiceTests {
+class IncomeServiceTest {
 
     @InjectMocks
-    private UserService userService;
+    private IncomeService incomeService;
+
+    @Mock
+    private IncomeRepository incomeRepository;
 
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private ExpenseRepository expenseRepository;
-
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);  // Initialize mocks
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testGetUserById_UserExists() {
+    void testGetIncomes() {
         // Arrange
-        User mockUser = new User();
-        mockUser.setId(1);
-        mockUser.setUsername("testUser");
-        mockUser.setEmail("test@example.com");
-        mockUser.setPassword("password123");
-
-        when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
+        List<Income> mockIncomes = Arrays.asList(new Income(), new Income());
+        when(incomeRepository.findAll()).thenReturn(mockIncomes);
 
         // Act
-        UserDTO userDTO = userService.getUserById(1);
+        Iterable<Income> incomes = incomeService.getIncomes();
 
         // Assert
-        assertNotNull(userDTO);
-        assertEquals("testUser", userDTO.getUsername());
-        assertEquals("test@example.com", userDTO.getEmail());
-        verify(userRepository, times(1)).findById(1);
+        assertNotNull(incomes);
+        assertEquals(2, ((List<Income>) incomes).size());
+        verify(incomeRepository, times(1)).findAll();
     }
 
     @Test
-    void testGetUserById_UserNotFound() {
-        // Arrange
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.getUserById(1));
-        assertEquals("User not found", exception.getMessage());
-        verify(userRepository, times(1)).findById(1);
-    }
-
-    @Test
-    void testGetUserByEmail_UserExists() {
-        // Arrange
-        User mockUser = new User();
-        mockUser.setEmail("test@example.com");
-        mockUser.setUsername("testUser");
-        mockUser.setPassword("password123");
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUser));
-
-        // Act
-        UserDTO userDTO = userService.getUserByEmail("test@example.com");
-
-        // Assert
-        assertNotNull(userDTO);
-        assertEquals("testUser", userDTO.getUsername());
-        assertEquals("test@example.com", userDTO.getEmail());
-        verify(userRepository, times(1)).findByEmail("test@example.com");
-    }
-
-    @Test
-    void testGetUserByEmail_UserNotFound() {
-        // Arrange
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.getUserByEmail("test@example.com"));
-        assertEquals("User not found", exception.getMessage());
-        verify(userRepository, times(1)).findByEmail("test@example.com");
-    }
-
-    @Test
-    void testCreateUser() {
-        // Arrange
-        UserDTO userDTO = new UserDTO(0, "newUser", "new@example.com", "password123");
-        User mockUser = new User();
-        mockUser.setUsername("newUser");
-        mockUser.setEmail("new@example.com");
-        mockUser.setPassword("password123");
-
-        when(userRepository.save(any(User.class))).thenReturn(mockUser);
-
-        // Act
-        UserDTO createdUser = userService.createUser(userDTO);
-
-        // Assert
-        assertNotNull(createdUser);
-        assertEquals("newUser", createdUser.getUsername());
-        assertEquals("new@example.com", createdUser.getEmail());
-        verify(userRepository, times(1)).save(any(User.class));
-    }
-
-    @Test
-    void testDeleteUser() {
+    void testGetIncomesByUserId() {
         // Arrange
         int userId = 1;
-
-        doNothing().when(userRepository).deleteById(userId);
+        List<Income> mockIncomes = Arrays.asList(new Income(), new Income());
+        when(incomeRepository.findByUserId(userId)).thenReturn(mockIncomes);
 
         // Act
-        userService.deleteUser(userId);
+        List<Income> incomes = incomeService.getIncomesByUserId(userId);
 
         // Assert
-        verify(userRepository, times(1)).deleteById(userId);
+        assertNotNull(incomes);
+        assertEquals(2, incomes.size());
+        verify(incomeRepository, times(1)).findByUserId(userId);
+    }
+
+    @Test
+    void testGetAllIncomesSorted() {
+        // Arrange
+        Income income1 = new Income();
+        income1.setCreatedDate(new Date());
+        Income income2 = new Income();
+        income2.setCreatedDate(new Date(System.currentTimeMillis() - 100000));
+        List<Income> mockIncomes = Arrays.asList(income1, income2);
+
+        when(incomeRepository.findAll()).thenReturn(mockIncomes);
+
+        // Act
+        List<Income> incomes = incomeService.getAllIncomes();
+
+        // Assert
+        assertNotNull(incomes);
+        assertEquals(income1, incomes.get(0)); // Expect income1 to be first (more recent)
+        verify(incomeRepository, times(1)).findAll();
+    }
+
+    @Test
+    void testPostOrCreateIncome_UserExists() {
+        // Arrange
+        int userId = 1;
+        IncomeDTO incomeDTO = new IncomeDTO();
+        incomeDTO.setIncomeName("Salary");
+        incomeDTO.setAmount(5000.0);
+
+        User mockUser = new User();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+
+        Income mockIncome = new Income();
+        when(incomeRepository.save(any(Income.class))).thenReturn(mockIncome);
+
+        // Act
+        Income createdIncome = incomeService.postOrCreateIncome(incomeDTO, userId);
+
+        // Assert
+        assertNotNull(createdIncome);
+        verify(userRepository, times(1)).findById(userId);
+        verify(incomeRepository, times(1)).save(any(Income.class));
+    }
+
+    @Test
+    void testPostOrCreateIncome_UserNotFound() {
+        // Arrange
+        int userId = 1;
+        IncomeDTO incomeDTO = new IncomeDTO();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> incomeService.postOrCreateIncome(incomeDTO, userId));
+        assertEquals("User not found with id: 0", exception.getMessage());
+        verify(userRepository, times(1)).findById(userId);
+        verify(incomeRepository, times(0)).save(any(Income.class));
+    }
+
+    @Test
+    void testGetIncomeById_IncomeExists() {
+        // Arrange
+        int incomeId = 1;
+        Income mockIncome = new Income();
+        when(incomeRepository.findById(incomeId)).thenReturn(Optional.of(mockIncome));
+
+        // Act
+        Income income = incomeService.getIncomeById(incomeId);
+
+        // Assert
+        assertNotNull(income);
+        verify(incomeRepository, times(1)).findById(incomeId);
+    }
+
+    @Test
+    void testGetIncomeById_IncomeNotFound() {
+        // Arrange
+        int incomeId = 1;
+        when(incomeRepository.findById(incomeId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> incomeService.getIncomeById(incomeId));
+        assertEquals("Income not found with id: 1", exception.getMessage());
+        verify(incomeRepository, times(1)).findById(incomeId);
+    }
+
+    @Test
+    void testUpdateIncome_IncomeExists() {
+        // Arrange
+        int incomeId = 1;
+        IncomeDTO incomeDTO = new IncomeDTO();
+        incomeDTO.setIncomeName("Updated Salary");
+        incomeDTO.setAmount(6000.0);
+
+        Income mockIncome = new Income();
+        User mockUser = new User();
+        mockIncome.setUser(mockUser);
+        when(incomeRepository.findById(incomeId)).thenReturn(Optional.of(mockIncome));
+        when(incomeRepository.save(any(Income.class))).thenReturn(mockIncome);
+
+        // Act
+        Income updatedIncome = incomeService.updateIncome(incomeId, incomeDTO);
+
+        // Assert
+        assertNotNull(updatedIncome);
+        assertEquals("Updated Salary", updatedIncome.getIncomeName());
+        assertEquals(6000.0, updatedIncome.getAmount());
+        verify(incomeRepository, times(1)).findById(incomeId);
+        verify(incomeRepository, times(1)).save(mockIncome);
+    }
+
+    @Test
+    void testUpdateIncome_IncomeNotFound() {
+        // Arrange
+        int incomeId = 1;
+        IncomeDTO incomeDTO = new IncomeDTO();
+        when(incomeRepository.findById(incomeId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> incomeService.updateIncome(incomeId, incomeDTO));
+        assertEquals("Income is not present with id: 1", exception.getMessage());
+        verify(incomeRepository, times(1)).findById(incomeId);
+    }
+
+    @Test
+    void testDeleteIncome_IncomeExists() {
+        // Arrange
+        int incomeId = 1;
+        Income mockIncome = new Income();
+        when(incomeRepository.findById(incomeId)).thenReturn(Optional.of(mockIncome));
+        doNothing().when(incomeRepository).deleteById(incomeId);
+
+        // Act
+        incomeService.deleteIncome(incomeId);
+
+        // Assert
+        verify(incomeRepository, times(1)).findById(incomeId);
+        verify(incomeRepository, times(1)).deleteById(incomeId);
+    }
+
+    @Test
+    void testDeleteIncome_IncomeNotFound() {
+        // Arrange
+        int incomeId = 1;
+        when(incomeRepository.findById(incomeId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> incomeService.deleteIncome(incomeId));
+        assertEquals("Income not found with id: 1", exception.getMessage());
+        verify(incomeRepository, times(1)).findById(incomeId);
+        verify(incomeRepository, times(0)).deleteById(incomeId);
     }
 }
