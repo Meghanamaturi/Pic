@@ -7,25 +7,19 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import yg.bootcamp.demo.dto.IncomeDTO;
-import yg.bootcamp.demo.entity.Income;
-import yg.bootcamp.demo.service.IncomeService;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import yg.bootcamp.demo.dto.GraphDTO;
+import yg.bootcamp.demo.service.StatsService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class IncomeControllerTest {
+class StatsControllerTest {
 
     @InjectMocks
-    private IncomeController incomeController;
+    private StatsController statsController;
 
     @Mock
-    private IncomeService incomeService;
+    private StatsService statsService;
 
     @BeforeEach
     void setUp() {
@@ -33,153 +27,60 @@ class IncomeControllerTest {
     }
 
     @Test
-    void testGetIncomes() {
+    void testGetChartDetails_Success() {
         // Arrange
-        List<Income> mockIncomes = Arrays.asList(new Income(), new Income());
-        when(incomeService.getIncomes()).thenReturn(mockIncomes);
+        GraphDTO mockGraphDTO = new GraphDTO();
+        when(statsService.getChartData(1)).thenReturn(mockGraphDTO);
 
         // Act
-        Iterable<Income> result = incomeController.getIncomes();
-
-        // Assert
-        assertEquals(mockIncomes, result);
-        verify(incomeService, times(1)).getIncomes();
-    }
-
-    @Test
-    void testGetIncomesByUserId_Success() {
-        // Arrange
-        List<Income> mockIncomes = Arrays.asList(new Income(), new Income());
-        when(incomeService.getIncomesByUserId(1)).thenReturn(mockIncomes);
-
-        // Act
-        ResponseEntity<?> response = incomeController.getIncomesByUserId(1);
+        ResponseEntity<GraphDTO> response = statsController.getChartDetails(1);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockIncomes, response.getBody());
-        verify(incomeService, times(1)).getIncomesByUserId(1);
+        assertEquals(mockGraphDTO, response.getBody());
+        verify(statsService, times(1)).getChartData(1);
     }
 
     @Test
-    void testGetIncomesByUserId_NotFound() {
+    void testGetChartDetails_Failure() {
         // Arrange
-        when(incomeService.getIncomesByUserId(1)).thenThrow(new EntityNotFoundException("User not found"));
+        when(statsService.getChartData(1)).thenReturn(null);
 
         // Act
-        ResponseEntity<?> response = incomeController.getIncomesByUserId(1);
+        ResponseEntity<GraphDTO> response = statsController.getChartDetails(1);
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("User not found", response.getBody());
-    }
-
-    @Test
-    void testPostOrCreateIncome_Success() {
-        // Arrange
-        IncomeDTO incomeDTO = new IncomeDTO();
-        Income createdIncome = new Income();
-        when(incomeService.postorCreateIncome(any(IncomeDTO.class), eq(1))).thenReturn(createdIncome);
-
-        // Act
-        ResponseEntity<?> response = incomeController.pestorCreateIncome(incomeDTO, 1);
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(createdIncome, response.getBody());
-        verify(incomeService, times(1)).postorCreateIncome(any(IncomeDTO.class), eq(1));
-    }
-
-    @Test
-    void testPostOrCreateIncome_BadRequest() {
-        // Arrange
-        when(incomeService.postorCreateIncome(any(IncomeDTO.class), eq(1))).thenReturn(null);
-
-        // Act
-        ResponseEntity<?> response = incomeController.pestorCreateIncome(new IncomeDTO(), 1);
-
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(null, response.getBody());
+        verify(statsService, times(1)).getChartData(1);
     }
 
     @Test
-    void testGetIncomeById_Success() {
+    void testGetStats_Success() {
         // Arrange
-        Income mockIncome = new Income();
-        when(incomeService.getIncomeById(1)).thenReturn(mockIncome);
+        Object mockStats = new Object();  // Replace with actual stats DTO object if defined
+        when(statsService.getStats(1)).thenReturn(mockStats);
 
         // Act
-        ResponseEntity<?> response = incomeController.getIncomeById(1);
+        ResponseEntity<?> response = statsController.getStats(1);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockIncome, response.getBody());
-        verify(incomeService, times(1)).getIncomeById(1);
+        assertEquals(mockStats, response.getBody());
+        verify(statsService, times(1)).getStats(1);
     }
 
     @Test
-    void testGetIncomeById_NotFound() {
+    void testGetStats_Failure() {
         // Arrange
-        when(incomeService.getIncomeById(1)).thenThrow(new EntityNotFoundException("Income not found"));
+        when(statsService.getStats(1)).thenReturn(null);
 
         // Act
-        ResponseEntity<?> response = incomeController.getIncomeById(1);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("Income not found", response.getBody());
-    }
-
-    @Test
-    void testUpdateIncome_Success() {
-        // Arrange
-        IncomeDTO incomeDTO = new IncomeDTO();
-        Income updatedIncome = new Income();
-        when(incomeService.updateIncome(anyInt(), any(IncomeDTO.class))).thenReturn(updatedIncome);
-
-        // Act
-        ResponseEntity<?> response = incomeController.updateIncome(1, incomeDTO);
+        ResponseEntity<?> response = statsController.getStats(1);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(updatedIncome, response.getBody());
-        verify(incomeService, times(1)).updateIncome(anyInt(), any(IncomeDTO.class));
-    }
-
-    @Test
-    void testUpdateIncome_NotFound() {
-        // Arrange
-        when(incomeService.updateIncome(anyInt(), any(IncomeDTO.class))).thenThrow(new EntityNotFoundException("Income not found"));
-
-        // Act
-        ResponseEntity<?> response = incomeController.updateIncome(1, new IncomeDTO());
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("Income not found", response.getBody());
-    }
-
-    @Test
-    void testDeleteIncome_Success() {
-        // Act
-        ResponseEntity<?> response = incomeController.deleteIncome(1);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(incomeService, times(1)).deleteIncome(1);
-    }
-
-    @Test
-    void testDeleteIncome_NotFound() {
-        // Arrange
-        doThrow(new EntityNotFoundException("Income not found")).when(incomeService).deleteIncome(1);
-
-        // Act
-        ResponseEntity<?> response = incomeController.deleteIncome(1);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("Income not found", response.getBody());
+        assertEquals(null, response.getBody());
+        verify(statsService, times(1)).getStats(1);
     }
 }
