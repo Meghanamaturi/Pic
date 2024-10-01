@@ -1,182 +1,98 @@
 package yg.bootcamp.demo.service;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDate;
 import java.util.*;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import yg.bootcamp.demo.dto.BudgetDto;
-import yg.bootcamp.demo.entity.Budget;
-import yg.bootcamp.demo.entity.Expense;
-import yg.bootcamp.demo.entity.User;
-import yg.bootcamp.demo.repository.BudgetRepository;
-import yg.bootcamp.demo.repository.ExpenseRepository;
-import yg.bootcamp.demo.repository.UserRepository;
 
-class BudgetServiceTest {
+import yg.bootcamp.demo.dto.GraphDTO;
+import yg.bootcamp.demo.dto.StatsDTO;
+import yg.bootcamp.demo.entity.Expense;
+import yg.bootcamp.demo.entity.Income;
+import yg.bootcamp.demo.repository.ExpenseRepository;
+import yg.bootcamp.demo.repository.IncomeRepository;
+
+public class StatsServiceTest {
 
     @InjectMocks
-    private BudgetService budgetService;
+    private StatsService statsService;
 
     @Mock
-    private BudgetRepository budgetRepository;
+    private IncomeRepository incomeRepository;
 
     @Mock
     private ExpenseRepository expenseRepository;
 
-    @Mock
-    private UserRepository userRepository;
-
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    void testPostOrCreateBudget_Success() {
-        // Arrange
-        BudgetDto budgetDto = new BudgetDto();
-        budgetDto.setAmount(1000.0);
-        User user = new User();
-        user.setId(1);
-        Optional<User> userOptional = Optional.of(user);
-
-        when(userRepository.findById(1)).thenReturn(userOptional);
-        when(budgetRepository.save(any(Budget.class))).thenReturn(new Budget());
-
-        // Act
-        Budget result = budgetService.postorCreateBudget(budgetDto, 1);
-
-        // Assert
-        assertNotNull(result);
-        verify(budgetRepository, times(1)).save(any(Budget.class));
-    }
-
-    @Test
-    void testPostOrCreateBudget_UserNotFound() {
-        // Arrange
-        BudgetDto budgetDto = new BudgetDto();
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(EntityNotFoundException.class, () -> {
-            budgetService.postorCreateBudget(budgetDto, 1);
-        });
-    }
-
-    @Test
-    void testGetBudgetsByUserId() {
-        // Arrange
+    public void testGetChartData() {
         int userId = 1;
-        List<Budget> mockBudgets = new ArrayList<>();
-        when(budgetRepository.findByUserId(userId)).thenReturn(mockBudgets);
+        LocalDate startDate = LocalDate.now().minusDays(365);
+        LocalDate endDate = LocalDate.now();
 
-        // Act
-        List<Budget> result = budgetService.getBudgetsByUserId(userId);
+        List<Expense> mockExpenses = Arrays.asList(new Expense());
+        List<Income> mockIncomes = Arrays.asList(new Income());
 
-        // Assert
+        when(expenseRepository.findByCreatedDateBetweenAndUserId(startDate, endDate, userId)).thenReturn(mockExpenses);
+        when(incomeRepository.findByCreatedDateBetweenAndUserId(startDate, endDate, userId)).thenReturn(mockIncomes);
+
+        GraphDTO result = statsService.getChartData(userId);
+
         assertNotNull(result);
-        verify(budgetRepository, times(1)).findByUserId(userId);
+        assertEquals(mockExpenses, result.getExpenseList());
+        assertEquals(mockIncomes, result.getIncomeList());
+
+        verify(expenseRepository, times(1)).findByCreatedDateBetweenAndUserId(startDate, endDate, userId);
+        verify(incomeRepository, times(1)).findByCreatedDateBetweenAndUserId(startDate, endDate, userId);
     }
 
     @Test
-    void testGetBudgetById_Success() {
-        // Arrange
-        Budget budget = new Budget();
-        Optional<Budget> optionalBudget = Optional.of(budget);
-        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
+    public void testGetStats() {
+        int userId = 1;
 
-        // Act
-        Optional<Budget> result = budgetService.getBudgetById(1);
+        Double totalIncome = 1000.0;
+        Double totalExpense = 800.0;
+        Income latestIncome = new Income();
+        latestIncome.setAmount(500.0);
+        Expense latestExpense = new Expense();
+        latestExpense.setAmount(200.0);
 
-        // Assert
-        assertTrue(result.isPresent());
-        verify(budgetRepository, times(1)).findById(1);
-    }
+        List<Income> incomeList = Arrays.asList(latestIncome);
+        List<Expense> expenseList = Arrays.asList(latestExpense);
 
-    @Test
-    void testGetBudgetAmountById_Success() {
-        // Arrange
-        Budget budget = new Budget();
-        budget.setAmount(500.0);
-        Optional<Budget> optionalBudget = Optional.of(budget);
-        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
+        when(incomeRepository.sumAllAmountsByUserId(userId)).thenReturn(totalIncome);
+        when(expenseRepository.sumAllAmountsByUserId(userId)).thenReturn(totalExpense);
+        when(incomeRepository.findFirstByUserIdOrderByCreatedDateDesc(userId)).thenReturn(Optional.of(latestIncome));
+        when(expenseRepository.findFirstByUserIdOrderByCreatedDateDesc(userId)).thenReturn(Optional.of(latestExpense));
+        when(incomeRepository.findByUserId(userId)).thenReturn(incomeList);
+        when(expenseRepository.findByUserId(userId)).thenReturn(expenseList);
 
-        // Act
-        double result = budgetService.getBudgetAmountById(1);
+        StatsDTO result = statsService.getStats(userId);
 
-        // Assert
-        assertEquals(500.0, result);
-        verify(budgetRepository, times(1)).findById(1);
-    }
-
-    @Test
-    void testGetBudgetAmountById_BudgetNotFound() {
-        // Arrange
-        when(budgetRepository.findById(1)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(NoSuchElementException.class, () -> {
-            budgetService.getBudgetAmountById(1);
-        });
-    }
-
-    @Test
-    void testCheckBudget_Success() {
-        // Arrange
-        Budget budget = new Budget();
-        budget.setStartDate(new Date());
-        budget.setEndDate(new Date());
-        Optional<Budget> optionalBudget = Optional.of(budget);
-
-        User user = new User();
-        Optional<User> userOptional = Optional.of(user);
-
-        List<Expense> mockExpenses = new ArrayList<>();
-        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
-        when(userRepository.findById(1)).thenReturn(userOptional);
-        when(expenseRepository.findByCreatedDateBetweenAndUserId(any(Date.class), any(Date.class), anyInt()))
-                .thenReturn(mockExpenses);
-
-        // Act
-        List<Expense> result = budgetService.checkBudget(1, 1);
-
-        // Assert
         assertNotNull(result);
-        verify(expenseRepository, times(1)).findByCreatedDateBetweenAndUserId(any(Date.class), any(Date.class), anyInt());
-    }
+        assertEquals(totalIncome, result.getIncome());
+        assertEquals(totalExpense, result.getExpense());
+        assertEquals(200.0, result.getMinExpense());
+        assertEquals(500.0, result.getMaxIncome());
+        assertEquals(500.0, result.getLatestIncome().getAmount());
+        assertEquals(200.0, result.getLatestExpense().getAmount());
 
-    @Test
-    void testDeleteBudget_Success() {
-        // Arrange
-        Budget budget = new Budget();
-        Optional<Budget> optionalBudget = Optional.of(budget);
-
-        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
-        doNothing().when(budgetRepository).deleteById(1);
-
-        // Act
-        boolean result = budgetService.deleteBudget(1);
-
-        // Assert
-        assertTrue(result);
-        verify(budgetRepository, times(1)).deleteById(1);
-    }
-
-    @Test
-    void testDeleteBudget_BudgetNotFound() {
-        // Arrange
-        when(budgetRepository.findById(1)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(EntityNotFoundException.class, () -> {
-            budgetService.deleteBudget(1);
-        });
+        verify(incomeRepository, times(1)).sumAllAmountsByUserId(userId);
+        verify(expenseRepository, times(1)).sumAllAmountsByUserId(userId);
+        verify(incomeRepository, times(1)).findFirstByUserIdOrderByCreatedDateDesc(userId);
+        verify(expenseRepository, times(1)).findFirstByUserIdOrderByCreatedDateDesc(userId);
+        verify(incomeRepository, times(1)).findByUserId(userId);
+        verify(expenseRepository, times(1)).findByUserId(userId);
     }
 }
