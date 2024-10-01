@@ -1,53 +1,132 @@
-checkBudget(budgetId: number) {
-    const userId = localStorage.getItem("Id");
-    if (userId != null) {
-        const id: number = parseInt(userId, 10);
+package yg.bootcamp.demo.service;
 
-        this.budgetService.checkBudget(budgetId, id).subscribe(res => {
-            let totalExpenses = 0;
-            let content = '<br>';
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import yg.bootcamp.demo.dto.UserDTO;
+import yg.bootcamp.demo.entity.User;
+import yg.bootcamp.demo.repository.ExpenseRepository;
+import yg.bootcamp.demo.repository.UserRepository;
 
-            // Calculate total expenses and build the content string
-            res.forEach((expense: any, index: number) => {
-                totalExpenses += expense.amount;
-                content += `${index + 1}. Amount: ${expense.amount}, Date: ${expense.date}, Description: ${expense.description}, Category: ${expense.category}<br>`;
-            });
+import java.util.Optional;
 
-            // Fetch the budget amount and compare it with total expenses
-            this.budgetService.getBudgetAmountById(budgetId).subscribe(budgetAmount => {
-                console.log("Total expense:", totalExpenses);
-                console.log("Budget amount:", budgetAmount);
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-                let result: number = Number(budgetAmount);  // Convert the budget amount to a number
-                let comparisonMessage: string;
+class UserServiceTests {
 
-                // Comparison logic
-                if (totalExpenses < result) {
-                    comparisonMessage = `You have saved $${(result - totalExpenses).toFixed(2)}.`;
-                } else if (totalExpenses > result) {
-                    comparisonMessage = `You have exceeded the budget by $${(totalExpenses - result).toFixed(2)}.`;
-                } else {
-                    comparisonMessage = "You have perfectly matched your budget!";
-                }
+    @InjectMocks
+    private UserService userService;
 
-                console.log(comparisonMessage);
+    @Mock
+    private UserRepository userRepository;
 
-                // Add the comparison message to the content
-                content += `<b>Result:</b> ${comparisonMessage}<br>`;
+    @Mock
+    private ExpenseRepository expenseRepository;
 
-                // Show the result in the modal
-                this.modal.confirm({
-                    nzTitle: 'Expense Details',
-                    nzContent: content,
-                    nzOnOk: () => console.log('OK clicked')
-                });
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);  // Initialize mocks
+    }
 
-            }, error => {
-                this.message.error("Error while getting budget amount", { nzDuration: 5000 });
-            });
+    @Test
+    void testGetUserById_UserExists() {
+        // Arrange
+        User mockUser = new User();
+        mockUser.setId(1);
+        mockUser.setUsername("testUser");
+        mockUser.setEmail("test@example.com");
+        mockUser.setPassword("password123");
 
-        }, error => {
-            this.message.error("Error while checking budget", { nzDuration: 5000 });
-        });
+        when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
+
+        // Act
+        UserDTO userDTO = userService.getUserById(1);
+
+        // Assert
+        assertNotNull(userDTO);
+        assertEquals("testUser", userDTO.getUsername());
+        assertEquals("test@example.com", userDTO.getEmail());
+        verify(userRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testGetUserById_UserNotFound() {
+        // Arrange
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.getUserById(1));
+        assertEquals("User not found", exception.getMessage());
+        verify(userRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testGetUserByEmail_UserExists() {
+        // Arrange
+        User mockUser = new User();
+        mockUser.setEmail("test@example.com");
+        mockUser.setUsername("testUser");
+        mockUser.setPassword("password123");
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUser));
+
+        // Act
+        UserDTO userDTO = userService.getUserByEmail("test@example.com");
+
+        // Assert
+        assertNotNull(userDTO);
+        assertEquals("testUser", userDTO.getUsername());
+        assertEquals("test@example.com", userDTO.getEmail());
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+    }
+
+    @Test
+    void testGetUserByEmail_UserNotFound() {
+        // Arrange
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.getUserByEmail("test@example.com"));
+        assertEquals("User not found", exception.getMessage());
+        verify(userRepository, times(1)).findByEmail("test@example.com");
+    }
+
+    @Test
+    void testCreateUser() {
+        // Arrange
+        UserDTO userDTO = new UserDTO(0, "newUser", "new@example.com", "password123");
+        User mockUser = new User();
+        mockUser.setUsername("newUser");
+        mockUser.setEmail("new@example.com");
+        mockUser.setPassword("password123");
+
+        when(userRepository.save(any(User.class))).thenReturn(mockUser);
+
+        // Act
+        UserDTO createdUser = userService.createUser(userDTO);
+
+        // Assert
+        assertNotNull(createdUser);
+        assertEquals("newUser", createdUser.getUsername());
+        assertEquals("new@example.com", createdUser.getEmail());
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void testDeleteUser() {
+        // Arrange
+        int userId = 1;
+
+        doNothing().when(userRepository).deleteById(userId);
+
+        // Act
+        userService.deleteUser(userId);
+
+        // Assert
+        verify(userRepository, times(1)).deleteById(userId);
     }
 }
