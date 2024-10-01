@@ -1,25 +1,37 @@
-package yg.bootcamp.demo.controller;
+package yg.bootcamp.demo.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.*;
+
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import yg.bootcamp.demo.dto.GraphDTO;
-import yg.bootcamp.demo.service.StatsService;
+import yg.bootcamp.demo.dto.BudgetDto;
+import yg.bootcamp.demo.entity.Budget;
+import yg.bootcamp.demo.entity.Expense;
+import yg.bootcamp.demo.entity.User;
+import yg.bootcamp.demo.repository.BudgetRepository;
+import yg.bootcamp.demo.repository.ExpenseRepository;
+import yg.bootcamp.demo.repository.UserRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-
-class StatsControllerTest {
+class BudgetServiceTest {
 
     @InjectMocks
-    private StatsController statsController;
+    private BudgetService budgetService;
 
     @Mock
-    private StatsService statsService;
+    private BudgetRepository budgetRepository;
+
+    @Mock
+    private ExpenseRepository expenseRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -27,60 +39,144 @@ class StatsControllerTest {
     }
 
     @Test
-    void testGetChartDetails_Success() {
+    void testPostOrCreateBudget_Success() {
         // Arrange
-        GraphDTO mockGraphDTO = new GraphDTO();
-        when(statsService.getChartData(1)).thenReturn(mockGraphDTO);
+        BudgetDto budgetDto = new BudgetDto();
+        budgetDto.setAmount(1000.0);
+        User user = new User();
+        user.setId(1);
+        Optional<User> userOptional = Optional.of(user);
+
+        when(userRepository.findById(1)).thenReturn(userOptional);
+        when(budgetRepository.save(any(Budget.class))).thenReturn(new Budget());
 
         // Act
-        ResponseEntity<GraphDTO> response = statsController.getChartDetails(1);
+        Budget result = budgetService.postorCreateBudget(budgetDto, 1);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockGraphDTO, response.getBody());
-        verify(statsService, times(1)).getChartData(1);
+        assertNotNull(result);
+        verify(budgetRepository, times(1)).save(any(Budget.class));
     }
 
     @Test
-    void testGetChartDetails_Failure() {
+    void testPostOrCreateBudget_UserNotFound() {
         // Arrange
-        when(statsService.getChartData(1)).thenReturn(null);
+        BudgetDto budgetDto = new BudgetDto();
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
 
-        // Act
-        ResponseEntity<GraphDTO> response = statsController.getChartDetails(1);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(null, response.getBody());
-        verify(statsService, times(1)).getChartData(1);
+        // Act & Assert
+        assertThrows(EntityNotFoundException.class, () -> {
+            budgetService.postorCreateBudget(budgetDto, 1);
+        });
     }
 
     @Test
-    void testGetStats_Success() {
+    void testGetBudgetsByUserId() {
         // Arrange
-        Object mockStats = new Object();  // Replace with actual stats DTO object if defined
-        when(statsService.getStats(1)).thenReturn(mockStats);
+        int userId = 1;
+        List<Budget> mockBudgets = new ArrayList<>();
+        when(budgetRepository.findByUserId(userId)).thenReturn(mockBudgets);
 
         // Act
-        ResponseEntity<?> response = statsController.getStats(1);
+        List<Budget> result = budgetService.getBudgetsByUserId(userId);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockStats, response.getBody());
-        verify(statsService, times(1)).getStats(1);
+        assertNotNull(result);
+        verify(budgetRepository, times(1)).findByUserId(userId);
     }
 
     @Test
-    void testGetStats_Failure() {
+    void testGetBudgetById_Success() {
         // Arrange
-        when(statsService.getStats(1)).thenReturn(null);
+        Budget budget = new Budget();
+        Optional<Budget> optionalBudget = Optional.of(budget);
+        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
 
         // Act
-        ResponseEntity<?> response = statsController.getStats(1);
+        Optional<Budget> result = budgetService.getBudgetById(1);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(null, response.getBody());
-        verify(statsService, times(1)).getStats(1);
+        assertTrue(result.isPresent());
+        verify(budgetRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testGetBudgetAmountById_Success() {
+        // Arrange
+        Budget budget = new Budget();
+        budget.setAmount(500.0);
+        Optional<Budget> optionalBudget = Optional.of(budget);
+        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
+
+        // Act
+        double result = budgetService.getBudgetAmountById(1);
+
+        // Assert
+        assertEquals(500.0, result);
+        verify(budgetRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testGetBudgetAmountById_BudgetNotFound() {
+        // Arrange
+        when(budgetRepository.findById(1)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NoSuchElementException.class, () -> {
+            budgetService.getBudgetAmountById(1);
+        });
+    }
+
+    @Test
+    void testCheckBudget_Success() {
+        // Arrange
+        Budget budget = new Budget();
+        budget.setStartDate(new Date());
+        budget.setEndDate(new Date());
+        Optional<Budget> optionalBudget = Optional.of(budget);
+
+        User user = new User();
+        Optional<User> userOptional = Optional.of(user);
+
+        List<Expense> mockExpenses = new ArrayList<>();
+        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
+        when(userRepository.findById(1)).thenReturn(userOptional);
+        when(expenseRepository.findByCreatedDateBetweenAndUserId(any(Date.class), any(Date.class), anyInt()))
+                .thenReturn(mockExpenses);
+
+        // Act
+        List<Expense> result = budgetService.checkBudget(1, 1);
+
+        // Assert
+        assertNotNull(result);
+        verify(expenseRepository, times(1)).findByCreatedDateBetweenAndUserId(any(Date.class), any(Date.class), anyInt());
+    }
+
+    @Test
+    void testDeleteBudget_Success() {
+        // Arrange
+        Budget budget = new Budget();
+        Optional<Budget> optionalBudget = Optional.of(budget);
+
+        when(budgetRepository.findById(1)).thenReturn(optionalBudget);
+        doNothing().when(budgetRepository).deleteById(1);
+
+        // Act
+        boolean result = budgetService.deleteBudget(1);
+
+        // Assert
+        assertTrue(result);
+        verify(budgetRepository, times(1)).deleteById(1);
+    }
+
+    @Test
+    void testDeleteBudget_BudgetNotFound() {
+        // Arrange
+        when(budgetRepository.findById(1)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(EntityNotFoundException.class, () -> {
+            budgetService.deleteBudget(1);
+        });
     }
 }
