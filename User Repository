@@ -1,11 +1,5 @@
 package yg.bootcamp.demo.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,135 +7,179 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import yg.bootcamp.demo.dto.IncomeDTO;
+import yg.bootcamp.demo.entity.Income;
+import yg.bootcamp.demo.service.IncomeService;
 
-import yg.bootcamp.demo.config.JwtUtil;
-import yg.bootcamp.demo.dto.LoginDTO;
-import yg.bootcamp.demo.dto.LoginResponseDTO;
-import yg.bootcamp.demo.dto.UserDTO;
-import yg.bootcamp.demo.entity.User;
-import yg.bootcamp.demo.repository.UserRepository;
-import yg.bootcamp.demo.service.ExpenseService;
-import yg.bootcamp.demo.service.UserService;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
-class UserControllerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+class IncomeControllerTest {
 
     @InjectMocks
-    private UserController userController;
+    private IncomeController incomeController;
 
     @Mock
-    private UserService userService;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private JwtUtil jwtUtil;
-
-    @Mock
-    private ExpenseService expenseService;
+    private IncomeService incomeService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    void testGetUserById() {
+    void testGetIncomes() {
         // Arrange
-        int userId = 1;
-        UserDTO mockUserDTO = new UserDTO(1, "John Doe", "john@example.com", "password");
-        when(userService.getUserById(userId)).thenReturn(mockUserDTO);
+        List<Income> mockIncomes = Arrays.asList(new Income(), new Income());
+        when(incomeService.getIncomes()).thenReturn(mockIncomes);
 
         // Act
-        UserDTO userDTO = userController.getUserById(userId);
+        Iterable<Income> result = incomeController.getIncomes();
 
         // Assert
-        assertNotNull(userDTO);
-        assertEquals("John Doe", userDTO.getUsername());
-        verify(userService, times(1)).getUserById(userId);
+        assertEquals(mockIncomes, result);
+        verify(incomeService, times(1)).getIncomes();
     }
 
     @Test
-    void testGetUserByEmail() {
+    void testGetIncomesByUserId_Success() {
         // Arrange
-        String email = "john@example.com";
-        UserDTO mockUserDTO = new UserDTO(1, "John Doe", email, "password");
-        when(userService.getUserByEmail(email)).thenReturn(mockUserDTO);
+        List<Income> mockIncomes = Arrays.asList(new Income(), new Income());
+        when(incomeService.getIncomesByUserId(1)).thenReturn(mockIncomes);
 
         // Act
-        UserDTO userDTO = userController.getUserByEmail(email);
-
-        // Assert
-        assertNotNull(userDTO);
-        assertEquals(email, userDTO.getEmail());
-        verify(userService, times(1)).getUserByEmail(email);
-    }
-
-    @Test
-    void testCreateUser() {
-        // Arrange
-        UserDTO userDTO = new UserDTO(1, "John Doe", "john@example.com", "password");
-        when(userService.createUser(any(UserDTO.class))).thenReturn(userDTO);
-
-        // Act
-        UserDTO createdUser = userController.createUser(userDTO);
-
-        // Assert
-        assertNotNull(createdUser);
-        assertEquals("John Doe", createdUser.getUsername());
-        verify(userService, times(1)).createUser(any(UserDTO.class));
-    }
-
-    @Test
-    void testLogin_Success() {
-        // Arrange
-        LoginDTO loginDTO = new LoginDTO("john@example.com", "password");
-        User mockUser = new User(1, "John Doe", "john@example.com", "password");
-        when(userRepository.findByEmail(loginDTO.getEmail())).thenReturn(Optional.of(mockUser));
-        when(jwtUtil.generateToken(mockUser.getUsername())).thenReturn("fake-jwt-token");
-
-        // Act
-        ResponseEntity<?> response = userController.login(loginDTO);
+        ResponseEntity<?> response = incomeController.getIncomesByUserId(1);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody() instanceof LoginResponseDTO);
-        LoginResponseDTO responseDTO = (LoginResponseDTO) response.getBody();
-        assertEquals("fake-jwt-token", responseDTO.getToken());
-        verify(userRepository, times(1)).findByEmail(loginDTO.getEmail());
-        verify(jwtUtil, times(1)).generateToken(mockUser.getUsername());
+        assertEquals(mockIncomes, response.getBody());
+        verify(incomeService, times(1)).getIncomesByUserId(1);
     }
 
     @Test
-    void testLogin_Failure_InvalidCredentials() {
+    void testGetIncomesByUserId_NotFound() {
         // Arrange
-        LoginDTO loginDTO = new LoginDTO("john@example.com", "wrong-password");
-        User mockUser = new User(1, "John Doe", "john@example.com", "password");
-        when(userRepository.findByEmail(loginDTO.getEmail())).thenReturn(Optional.of(mockUser));
+        when(incomeService.getIncomesByUserId(1)).thenThrow(new EntityNotFoundException("User not found"));
 
         // Act
-        ResponseEntity<?> response = userController.login(loginDTO);
+        ResponseEntity<?> response = incomeController.getIncomesByUserId(1);
 
         // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Invalid credentials", response.getBody());
-        verify(userRepository, times(1)).findByEmail(loginDTO.getEmail());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("User not found", response.getBody());
     }
 
     @Test
-    void testDeleteUser() {
+    void testPostOrCreateIncome_Success() {
         // Arrange
-        int userId = 1;
-        doNothing().when(userService).deleteUser(userId);
+        IncomeDTO incomeDTO = new IncomeDTO();
+        Income createdIncome = new Income();
+        when(incomeService.postorCreateIncome(any(IncomeDTO.class), eq(1))).thenReturn(createdIncome);
 
         // Act
-        userController.deleteUser(userId);
+        ResponseEntity<?> response = incomeController.pestorCreateIncome(incomeDTO, 1);
 
         // Assert
-        verify(userService, times(1)).deleteUser(userId);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(createdIncome, response.getBody());
+        verify(incomeService, times(1)).postorCreateIncome(any(IncomeDTO.class), eq(1));
     }
 
-    private boolean passwordMatches(String rawPassword, String storedPassword) {
-        return rawPassword.equals(storedPassword);
+    @Test
+    void testPostOrCreateIncome_BadRequest() {
+        // Arrange
+        when(incomeService.postorCreateIncome(any(IncomeDTO.class), eq(1))).thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = incomeController.pestorCreateIncome(new IncomeDTO(), 1);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(null, response.getBody());
+    }
+
+    @Test
+    void testGetIncomeById_Success() {
+        // Arrange
+        Income mockIncome = new Income();
+        when(incomeService.getIncomeById(1)).thenReturn(mockIncome);
+
+        // Act
+        ResponseEntity<?> response = incomeController.getIncomeById(1);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockIncome, response.getBody());
+        verify(incomeService, times(1)).getIncomeById(1);
+    }
+
+    @Test
+    void testGetIncomeById_NotFound() {
+        // Arrange
+        when(incomeService.getIncomeById(1)).thenThrow(new EntityNotFoundException("Income not found"));
+
+        // Act
+        ResponseEntity<?> response = incomeController.getIncomeById(1);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("Income not found", response.getBody());
+    }
+
+    @Test
+    void testUpdateIncome_Success() {
+        // Arrange
+        IncomeDTO incomeDTO = new IncomeDTO();
+        Income updatedIncome = new Income();
+        when(incomeService.updateIncome(anyInt(), any(IncomeDTO.class))).thenReturn(updatedIncome);
+
+        // Act
+        ResponseEntity<?> response = incomeController.updateIncome(1, incomeDTO);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updatedIncome, response.getBody());
+        verify(incomeService, times(1)).updateIncome(anyInt(), any(IncomeDTO.class));
+    }
+
+    @Test
+    void testUpdateIncome_NotFound() {
+        // Arrange
+        when(incomeService.updateIncome(anyInt(), any(IncomeDTO.class))).thenThrow(new EntityNotFoundException("Income not found"));
+
+        // Act
+        ResponseEntity<?> response = incomeController.updateIncome(1, new IncomeDTO());
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("Income not found", response.getBody());
+    }
+
+    @Test
+    void testDeleteIncome_Success() {
+        // Act
+        ResponseEntity<?> response = incomeController.deleteIncome(1);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(incomeService, times(1)).deleteIncome(1);
+    }
+
+    @Test
+    void testDeleteIncome_NotFound() {
+        // Arrange
+        doThrow(new EntityNotFoundException("Income not found")).when(incomeService).deleteIncome(1);
+
+        // Act
+        ResponseEntity<?> response = incomeController.deleteIncome(1);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("Income not found", response.getBody());
     }
 }
