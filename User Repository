@@ -1,123 +1,25 @@
-package yg.bootcamp.demo.service;
+<form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+  <!-- Email Form Item -->
+  <nz-form-item>
+    <nz-form-label [nzFor]="'email'">Email</nz-form-label>
+    <nz-form-control [nzErrorTip]="emailErrorTpl">
+      <input type="email" nz-input formControlName="email" id="email" required />
+    </nz-form-control>
+  </nz-form-item>
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import yg.bootcamp.demo.dto.GraphDTO;
-import yg.bootcamp.demo.dto.StatsDTO;
-import yg.bootcamp.demo.entity.Expense;
-import yg.bootcamp.demo.entity.Income;
-import yg.bootcamp.demo.repository.ExpenseRepository;
-import yg.bootcamp.demo.repository.IncomeRepository;
+  <!-- Error Message Template -->
+  <ng-template #emailErrorTpl>
+    <div *ngIf="email.invalid && (email.dirty || email.touched)">
+      <ng-container *ngIf="email.errors?.['required']">
+        Email is required.
+      </ng-container>
+      <ng-container *ngIf="email.errors?.['email']">
+        Please enter a valid email address.
+      </ng-container>
+    </div>
+  </ng-template>
 
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalDouble;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-class StatsServiceTest {
-
-    @InjectMocks
-    private StatsService statsService;
-
-    @Mock
-    private IncomeRepository incomeRepository;
-
-    @Mock
-    private ExpenseRepository expenseRepository;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    void testGetChartData() {
-        // Arrange
-        int userId = 1;
-        LocalDate startDate = LocalDate.now().minusDays(365);
-        LocalDate endDate = LocalDate.now();
-
-        List<Expense> expenses = Arrays.asList(
-            new Expense(1, "Groceries", 100.0, LocalDate.now(), null),
-            new Expense(2, "Rent", 500.0, LocalDate.now(), null)
-        );
-        List<Income> incomes = Arrays.asList(
-            new Income(1, "Salary", 2000.0, LocalDate.now(), null),
-            new Income(2, "Freelancing", 300.0, LocalDate.now(), null)
-        );
-
-        when(expenseRepository.findByCreatedDateBetweenAndUserId(startDate, endDate, userId)).thenReturn(expenses);
-        when(incomeRepository.findByCreatedDateBetweenAndUserId(startDate, endDate, userId)).thenReturn(incomes);
-
-        // Act
-        GraphDTO graphDTO = statsService.getChartData(userId);
-
-        // Assert
-        assertNotNull(graphDTO);
-        assertEquals(2, graphDTO.getExpenseList().size());
-        assertEquals(2, graphDTO.getIncomeList().size());
-
-        verify(expenseRepository, times(1)).findByCreatedDateBetweenAndUserId(startDate, endDate, userId);
-        verify(incomeRepository, times(1)).findByCreatedDateBetweenAndUserId(startDate, endDate, userId);
-    }
-
-    @Test
-    void testGetStats() {
-        // Arrange
-        int userId = 1;
-        Double totalIncome = 2300.0;
-        Double totalExpense = 600.0;
-        Income latestIncome = new Income(1, "Salary", 2000.0, LocalDate.now(), null);
-        Expense latestExpense = new Expense(1, "Groceries", 100.0, LocalDate.now(), null);
-
-        List<Income> incomeList = Arrays.asList(
-            new Income(1, "Salary", 2000.0, LocalDate.now(), null),
-            new Income(2, "Freelancing", 300.0, LocalDate.now(), null)
-        );
-        List<Expense> expenseList = Arrays.asList(
-            new Expense(1, "Groceries", 100.0, LocalDate.now(), null),
-            new Expense(2, "Rent", 500.0, LocalDate.now(), null)
-        );
-
-        when(incomeRepository.sumAllAmountsByUserId(userId)).thenReturn(totalIncome);
-        when(expenseRepository.sumAllAmountsByUserId(userId)).thenReturn(totalExpense);
-        when(incomeRepository.findFirstByUserIdOrderByCreatedDateDesc(userId)).thenReturn(Optional.of(latestIncome));
-        when(expenseRepository.findFirstByUserIdOrderByCreatedDateDesc(userId)).thenReturn(Optional.of(latestExpense));
-        when(incomeRepository.findByUserId(userId)).thenReturn(incomeList);
-        when(expenseRepository.findByUserId(userId)).thenReturn(expenseList);
-
-        // Act
-        StatsDTO statsDTO = statsService.getStats(userId);
-
-        // Assert
-        assertNotNull(statsDTO);
-        assertEquals(totalIncome, statsDTO.getIncome());
-        assertEquals(totalExpense, statsDTO.getExpense());
-        assertEquals(2000.0, statsDTO.getLatestIncome().getAmount());
-        assertEquals(100.0, statsDTO.getLatestExpense().getAmount());
-        assertEquals(totalIncome - totalExpense, statsDTO.getBalance());
-
-        OptionalDouble maxIncome = incomeList.stream().mapToDouble(Income::getAmount).max();
-        OptionalDouble minIncome = incomeList.stream().mapToDouble(Income::getAmount).min();
-        OptionalDouble maxExpense = expenseList.stream().mapToDouble(Expense::getAmount).max();
-        OptionalDouble minExpense = expenseList.stream().mapToDouble(Expense::getAmount).min();
-
-        assertEquals(maxIncome.getAsDouble(), statsDTO.getMaxIncome());
-        assertEquals(minIncome.getAsDouble(), statsDTO.getMinIncome());
-        assertEquals(maxExpense.getAsDouble(), statsDTO.getMaxExpense());
-        assertEquals(minExpense.getAsDouble(), statsDTO.getMinExpense());
-
-        verify(incomeRepository, times(1)).sumAllAmountsByUserId(userId);
-        verify(expenseRepository, times(1)).sumAllAmountsByUserId(userId);
-        verify(incomeRepository, times(1)).findFirstByUserIdOrderByCreatedDateDesc(userId);
-        verify(expenseRepository, times(1)).findFirstByUserIdOrderByCreatedDateDesc(userId);
-    }
-}
+  <button nz-button nzType="primary" [disabled]="registrationForm.invalid">
+    Submit
+  </button>
+</form>
