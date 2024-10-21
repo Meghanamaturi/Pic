@@ -1,25 +1,41 @@
-<form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
-  <!-- Email Form Item -->
-  <nz-form-item>
-    <nz-form-label [nzFor]="'email'">Email</nz-form-label>
-    <nz-form-control [nzErrorTip]="emailErrorTpl">
-      <input type="email" nz-input formControlName="email" id="email" required />
-    </nz-form-control>
-  </nz-form-item>
+@Override
+public void validate(List<DeltaRow> rows, InputValidationResponse response) {
+    for (DeltaRow row : rows) {
+        // Check deltaSensitivities separately
+        if (row.getDeltaSensitivities() != null && !row.getDeltaSensitivities().isEmpty()) {
+            if (!RulesValidationsHelper.validateListOfDouble(row.getDeltaSensitivities())) {
+                // If deltaSensitivities validation fails
+                updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+                setOverallMsg("Validation Failed: Invalid Delta Sensitivities.", response);
+            }
+        } else {
+            updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+            setOverallMsg("Validation Failed: Missing Delta Sensitivities.", response);
+        }
 
-  <!-- Error Message Template -->
-  <ng-template #emailErrorTpl>
-    <div *ngIf="email.invalid && (email.dirty || email.touched)">
-      <ng-container *ngIf="email.errors?.['required']">
-        Email is required.
-      </ng-container>
-      <ng-container *ngIf="email.errors?.['email']">
-        Please enter a valid email address.
-      </ng-container>
-    </div>
-  </ng-template>
+        // Check sensitivityDates separately
+        if (row.getSensitivityDates() != null && !row.getSensitivityDates().isEmpty()) {
+            if (!RulesValidationsHelper.validateListOfTenors(row.getSensitivityDates())) {
+                // If sensitivityDates validation fails
+                updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+                setOverallMsg("Validation Failed: Invalid Sensitivity Dates.", response);
+            }
+        } else {
+            updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+            setOverallMsg("Validation Failed: Missing Sensitivity Dates.", response);
+        }
 
-  <button nz-button nzType="primary" [disabled]="registrationForm.invalid">
-    Submit
-  </button>
-</form>
+        // Check if both lists have the same length
+        if (row.getDeltaSensitivities() != null && row.getSensitivityDates() != null) {
+            if (row.getDeltaSensitivities().split(";").length != row.getSensitivityDates().split(";").length) {
+                updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+                setOverallMsg("Validation Failed: Mismatch between Delta Sensitivities and Sensitivity Dates lengths.", response);
+            }
+        }
+    }
+
+    // Set overall success if no errors
+    if (response.isValidated()) {
+        setOverallMsg(OVERALLSUCCESSMSG, response);
+    }
+}
