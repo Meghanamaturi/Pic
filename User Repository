@@ -49,3 +49,47 @@ public void validate(List<DeltaRow> rows, InputValidationResponse response) {
         setOverallMsg(OVERALLSUCCESSMSG, response);
     }
 }
+
+
+
+@Override
+public void validate(List<DeltaRow> rows, InputValidationResponse response) {
+    for (DeltaRow row : rows) {
+        // Check deltaSensitivities separately
+        if (row.getDeltaSensitivities() != null && !row.getDeltaSensitivities().isEmpty()) {
+            if (!RulesValidationsHelper.validateListOfDouble(row.getDeltaSensitivities())) {
+                // If deltaSensitivities validation fails
+                updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+                setOverallMsg("Validation Failed: Invalid Delta Sensitivities.", response);
+            }
+        } else {
+            updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+            setOverallMsg("Validation Failed: Missing Delta Sensitivities.", response);
+        }
+
+        // Check sensitivityDates separately
+        if (row.getSensitivityDates() != null && !row.getSensitivityDates().isEmpty()) {
+            if (!RulesValidationsHelper.validateListOfTenors(row.getSensitivityDates())) {
+                // If sensitivityDates validation fails
+                updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+                setOverallMsg("Validation Failed: Invalid Sensitivity Dates.", response);
+            }
+        } else {
+            updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+            setOverallMsg("Validation Failed: Missing Sensitivity Dates.", response);
+        }
+
+        // Check if both lists have the same length
+        if (row.getDeltaSensitivities() != null && row.getSensitivityDates() != null) {
+            if (row.getDeltaSensitivities().split(";").length != row.getSensitivityDates().split(";").length) {
+                updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+                setOverallMsg("Validation Failed: Mismatch between Delta Sensitivities and Sensitivity Dates lengths.", response);
+            }
+        }
+    }
+
+    // Set overall success if no errors
+    if (response.isValidated()) {
+        setOverallMsg(OVERALLSUCCESSMSG, response);
+    }
+}
