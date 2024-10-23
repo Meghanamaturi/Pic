@@ -93,3 +93,55 @@ public void validate(List<DeltaRow> rows, InputValidationResponse response) {
         setOverallMsg(OVERALLSUCCESSMSG, response);
     }
 }
+
+@Override
+public void validate(List<DeltaRow> rows, InputValidationResponse response) {
+    boolean allSensitivityDatesEmpty = rows.stream()
+        .allMatch(row -> row.getSensitivityDates() == null || row.getSensitivityDates().isEmpty());
+
+    for (DeltaRow row : rows) {
+        // Validate deltaSensitivities for each row
+        if (row.getDeltaSensitivities() != null && !row.getDeltaSensitivities().isEmpty()) {
+            if (!RulesValidationsHelper.validateListOfDouble(Collections.singletonList(row.getDeltaSensitivities()))) {
+                updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+                setOverallMsg("Validation Failed: Invalid Delta Sensitivities.", response);
+            }
+        } else {
+            updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+            setOverallMsg("Validation Failed: Missing Delta Sensitivities.", response);
+        }
+
+        // Validate sensitivityDates for each row, but only if the entire column is not empty
+        if (!allSensitivityDatesEmpty) {
+            if (row.getSensitivityDates() != null && !row.getSensitivityDates().isEmpty()) {
+                if (!RulesValidationsHelper.validateListOfTenors(Collections.singletonList(row.getSensitivityDates()))) {
+                    updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+                    setOverallMsg("Validation Failed: Invalid Sensitivity Dates.", response);
+                }
+            } else {
+                updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+                setOverallMsg("Validation Failed: Missing Sensitivity Dates.", response);
+            }
+        }
+
+        // Validate that both deltaSensitivities and sensitivityDates exist together, only if sensitivityDates are not empty
+        if (!allSensitivityDatesEmpty) {
+            if ((row.getDeltaSensitivities() != null && !row.getDeltaSensitivities().isEmpty()) &&
+                (row.getSensitivityDates() == null || row.getSensitivityDates().isEmpty())) {
+                updateErrorCountToRow(row, DELTA_SENSITIVITIES_ERR_MSG, DELTA_SENSITIVITIES, response);
+                setOverallMsg("Validation Failed: Sensitivity Dates are missing for Delta Sensitivities.", response);
+            }
+
+            if ((row.getSensitivityDates() != null && !row.getSensitivityDates().isEmpty()) &&
+                (row.getDeltaSensitivities() == null || row.getDeltaSensitivities().isEmpty())) {
+                updateErrorCountToRow(row, SENSITIVITY_DATES_ERR_MSG, SENSITIVITY_DATES, response);
+                setOverallMsg("Validation Failed: Delta Sensitivities are missing for Sensitivity Dates.", response);
+            }
+        }
+    }
+
+    // Set overall success if no errors
+    if (response.isValidated()) {
+        setOverallMsg(OVERALLSUCCESSMSG, response);
+    }
+}
