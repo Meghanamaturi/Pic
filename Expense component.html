@@ -1,3 +1,53 @@
-@ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+@JsonProperty("deltaRows")
+public List<DeltaRow> getSensiDeltaRows() {
+    // Process rows to sum up duplicate DeltaRows based on all columns except deltaSensitivities
+    return rows.stream()
+        .filter(DeltaRow.class::isInstance) // Filter only DeltaRow instances
+        .map(DeltaRow.class::cast)
+        .collect(Collectors.groupingBy(
+            this::generateKey, // Group by all fields except deltaSensitivities
+            Collectors.collectingAndThen(
+                Collectors.toList(),
+                this::mergeDeltaRows // Merge duplicates by summing deltaSensitivities
+            )
+        ))
+        .values()
+        .stream()
+        .toList();
+}
+
+// Helper method to generate a unique key for grouping
+private String generateKey(DeltaRow row) {
+    // Use reflection to dynamically create a key from all fields except deltaSensitivities
+    return Arrays.stream(row.getClass().getDeclaredFields())
+        .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities"))
+        .map(field -> {
+            try {
+                field.setAccessible(true);
+                return String.valueOf(field.get(row));
+            } catch (IllegalAccessException e) {
+                return "null";
+            }
+        })
+        .collect(Collectors.joining("|")); // Create a unique key using "|"
+}
+
+// Helper method to merge DeltaRows
+private DeltaRow mergeDeltaRows(List<DeltaRow> rows) {
+    DeltaRow baseRow = rows.get(0); // Use the first row as the base
+    double totalDeltaSensitivities = rows.stream()
+        .map(DeltaRow::getDeltaSensitivities)
+        .map(this::parseDouble)
+        .reduce(0.0, Double::sum); // Sum up deltaSensitivities
+    baseRow.setDeltaSensitivities(String.valueOf(totalDeltaSensitivities));
+    return baseRow;
+}
+
+// Helper method to safely parse deltaSensitivities as double
+private double parseDouble(String value) {
+    try {
+        return Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+        return 0.0; // Handle invalid numbers gracefully
+    }
+}
