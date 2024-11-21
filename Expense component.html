@@ -36,3 +36,55 @@ public class ValidateDuplicates implements SensiRulesValidations {
             .collect(Collectors.joining("|")); // Create a unique key using "|"
     }
 }
+@JsonProperty("deltaRows")
+public List<DeltaRow> getSensiDeltaRows() {
+    // Set to track unique keys
+    Set<String> uniqueKeys = new HashSet<>();
+
+    // Iterate through rows and check for duplicates
+    for (SensiRow row : rows) {
+        if (row instanceof DeltaRow deltaRow) { // Only process DeltaRow instances
+            String key = generateKey(deltaRow);
+            if (!uniqueKeys.add(key)) {
+                // Log an error for duplicate rows
+                updateErrorCountToRow(row, "Duplicate row found in the file.", null, response);
+            }
+        }
+    }
+
+    setOverallMsg(response); // Set overall validation message
+
+    // Return filtered DeltaRows
+    return rows.stream()
+        .filter(DeltaRow.class::isInstance)
+        .map(DeltaRow.class::cast)
+        .toList();
+}
+
+// Helper method to generate a unique key for identifying duplicates
+private String generateKey(DeltaRow row) {
+    // Use reflection to dynamically create a key from all fields except deltaSensitivities
+    return Arrays.stream(row.getClass().getDeclaredFields())
+        .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities"))
+        .map(field -> {
+            try {
+                field.setAccessible(true);
+                return String.valueOf(field.get(row));
+            } catch (IllegalAccessException e) {
+                return "null";
+            }
+        })
+        .collect(Collectors.joining("|")); // Create a unique key using "|"
+}
+
+// Mockup for updateErrorCountToRow
+private void updateErrorCountToRow(SensiRow row, String errorMessage, String columnInError, InputValidationResponse response) {
+    // Add an error message to the response (implement according to your actual logic)
+    System.out.println("Error for row: " + row + " - " + errorMessage);
+}
+
+// Mockup for setOverallMsg
+private void setOverallMsg(InputValidationResponse response) {
+    // Set the overall response message (implement according to your actual logic)
+    System.out.println("Overall validation completed.");
+}
