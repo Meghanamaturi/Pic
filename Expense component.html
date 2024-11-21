@@ -1,98 +1,38 @@
-@JsonProperty("deltaRows")
-public List<DeltaRow> getSensiDeltaRows() {
-    // Process rows to sum up duplicate DeltaRows based on all columns except deltaSensitivities
-    return rows.stream()
-        .filter(DeltaRow.class::isInstance) // Filter only DeltaRow instances
-        .map(DeltaRow.class::cast)
-        .collect(Collectors.groupingBy(
-            this::generateKey, // Group by all fields except deltaSensitivities
-            Collectors.collectingAndThen(
-                Collectors.toList(),
-                this::mergeDeltaRows // Merge duplicates by summing deltaSensitivities
-            )
-        ))
-        .values()
-        .stream()
-        .toList();
-}
+public class ValidateDuplicates implements SensiRulesValidations {
 
-// Helper method to generate a unique key for grouping
-private String generateKey(DeltaRow row) {
-    // Use reflection to dynamically create a key from all fields except deltaSensitivities
-    return Arrays.stream(row.getClass().getDeclaredFields())
-        .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities"))
-        .map(field -> {
-            try {
-                field.setAccessible(true);
-                return String.valueOf(field.get(row));
-            } catch (IllegalAccessException e) {
-                return "null";
+    @Override
+    public void validate(List<SensiRow> sensiRows, InputValidationResponse response) {
+        // Set to track unique keys
+        Set<String> uniqueKeys = new HashSet<>();
+
+        // Iterate through rows and check for duplicates
+        for (SensiRow row : sensiRows) {
+            if (row instanceof DeltaRow deltaRow) { // Only process DeltaRow instances
+                String key = generateKey(deltaRow);
+                if (!uniqueKeys.add(key)) {
+                    // Update the response if a duplicate is found
+                    updateErrorCountToRow(row, "Duplicate row found in the file.", null, response);
+                }
             }
-        })
-        .collect(Collectors.joining("|")); // Create a unique key using "|"
-}
+        }
 
-// Helper method to merge DeltaRows
-private DeltaRow mergeDeltaRows(List<DeltaRow> rows) {
-    DeltaRow baseRow = rows.get(0); // Use the first row as the base
-    double totalDeltaSensitivities = rows.stream()
-        .map(DeltaRow::getDeltaSensitivities)
-        .map(this::parseDouble)
-        .reduce(0.0, Double::sum); // Sum up deltaSensitivities
-    baseRow.setDeltaSensitivities(String.valueOf(totalDeltaSensitivities));
-    return baseRow;
-}
-
-// Helper method to safely parse deltaSensitivities as double
-private double parseDouble(String value) {
-    try {
-        return Double.parseDouble(value);
-    } catch (NumberFormatException e) {
-        return 0.0; // Handle invalid numbers gracefully
-    }
-}
-
-
-
-    @JsonProperty("deltaRows")
-public List<DeltaRow> getSensiDeltaRows() {
-    // Set to track duplicate keys
-    Set<String> uniqueKeys = new HashSet<>();
-    List<String> duplicateMessages = new ArrayList<>();
-
-    // Process rows to check for duplicates
-    List<DeltaRow> deltaRows = rows.stream()
-        .filter(DeltaRow.class::isInstance) // Filter only DeltaRow instances
-        .map(DeltaRow.class::cast)
-        .peek(row -> {
-            String key = generateKey(row); // Generate a unique key for the row
-            if (!uniqueKeys.add(key)) {
-                duplicateMessages.add("Duplicate found for key: " + key);
-            }
-        })
-        .toList();
-
-    // Log duplicate messages (or handle them as needed)
-    if (!duplicateMessages.isEmpty()) {
-        duplicateMessages.forEach(System.out::println); // Print duplicates to the console
-        throw new RuntimeException("Duplicate rows detected in the file: " + duplicateMessages);
+        // Set the overall validation message
+        setOverallMsg(response);
     }
 
-    return deltaRows; // Return rows if no duplicates are found
-}
-
-// Helper method to generate a unique key for identifying duplicates
-private String generateKey(DeltaRow row) {
-    // Use reflection to dynamically create a key from all fields except deltaSensitivities
-    return Arrays.stream(row.getClass().getDeclaredFields())
-        .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities"))
-        .map(field -> {
-            try {
-                field.setAccessible(true);
-                return String.valueOf(field.get(row));
-            } catch (IllegalAccessException e) {
-                return "null";
-            }
-        })
-        .collect(Collectors.joining("|")); // Create a unique key using "|"
+    // Helper method to generate a unique key for identifying duplicates
+    private String generateKey(DeltaRow row) {
+        // Use reflection to dynamically create a key from all fields except deltaSensitivities
+        return Arrays.stream(row.getClass().getDeclaredFields())
+            .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities"))
+            .map(field -> {
+                try {
+                    field.setAccessible(true);
+                    return String.valueOf(field.get(row));
+                } catch (IllegalAccessException e) {
+                    return "null";
+                }
+            })
+            .collect(Collectors.joining("|")); // Create a unique key using "|"
+    }
 }
