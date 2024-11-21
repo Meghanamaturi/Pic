@@ -51,3 +51,48 @@ private double parseDouble(String value) {
         return 0.0; // Handle invalid numbers gracefully
     }
 }
+
+
+
+    @JsonProperty("deltaRows")
+public List<DeltaRow> getSensiDeltaRows() {
+    // Set to track duplicate keys
+    Set<String> uniqueKeys = new HashSet<>();
+    List<String> duplicateMessages = new ArrayList<>();
+
+    // Process rows to check for duplicates
+    List<DeltaRow> deltaRows = rows.stream()
+        .filter(DeltaRow.class::isInstance) // Filter only DeltaRow instances
+        .map(DeltaRow.class::cast)
+        .peek(row -> {
+            String key = generateKey(row); // Generate a unique key for the row
+            if (!uniqueKeys.add(key)) {
+                duplicateMessages.add("Duplicate found for key: " + key);
+            }
+        })
+        .toList();
+
+    // Log duplicate messages (or handle them as needed)
+    if (!duplicateMessages.isEmpty()) {
+        duplicateMessages.forEach(System.out::println); // Print duplicates to the console
+        throw new RuntimeException("Duplicate rows detected in the file: " + duplicateMessages);
+    }
+
+    return deltaRows; // Return rows if no duplicates are found
+}
+
+// Helper method to generate a unique key for identifying duplicates
+private String generateKey(DeltaRow row) {
+    // Use reflection to dynamically create a key from all fields except deltaSensitivities
+    return Arrays.stream(row.getClass().getDeclaredFields())
+        .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities"))
+        .map(field -> {
+            try {
+                field.setAccessible(true);
+                return String.valueOf(field.get(row));
+            } catch (IllegalAccessException e) {
+                return "null";
+            }
+        })
+        .collect(Collectors.joining("|")); // Create a unique key using "|"
+}
