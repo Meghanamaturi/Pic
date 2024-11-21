@@ -114,3 +114,44 @@ public void validate(List<SensiRow> sensiRows, InputValidationResponse response)
     setOverallMsg(response);
 }
                 
+@Override
+public void validate(List<SensiRow> sensiRows, InputValidationResponse response) {
+    // Map to track tradeId and unique keys for each row
+    Map<String, Set<String>> tradeIdToUniqueRows = new HashMap<>();
+
+    for (SensiRow row : sensiRows) {
+        // Only process DeltaRow instances
+        if (row instanceof DeltaRow deltaRow) {
+            String tradeId = row.getTradeId();
+            String uniqueRowKey = generateKeyWithoutDeltaSensitivities(deltaRow);
+
+            // Initialize the map for this tradeId if not already present
+            tradeIdToUniqueRows.putIfAbsent(tradeId, new HashSet<>());
+
+            // Check for duplicate rows for the tradeId
+            if (!tradeIdToUniqueRows.get(tradeId).add(uniqueRowKey)) {
+                // Duplicate found, update error response
+                updateErrorCountToRow(row, "Duplicate row found for tradeId '" + tradeId + "' (ignoring deltaSensitivities).", null, response);
+            }
+        }
+    }
+
+    // Set overall validation message
+    setOverallMsg(response);
+}
+
+// Helper method to generate a unique key for a DeltaRow, excluding deltaSensitivities
+private String generateKeyWithoutDeltaSensitivities(DeltaRow row) {
+    return Arrays.stream(row.getClass().getDeclaredFields())
+        .filter(field -> !field.getName().equalsIgnoreCase("deltaSensitivities")) // Exclude deltaSensitivities
+        .map(field -> {
+            try {
+                field.setAccessible(true);
+                Object value = field.get(row);
+                return value != null ? value.toString().trim() : "null"; // Trim and handle null values
+            } catch (IllegalAccessException e) {
+                return "null"; // Handle inaccessible fields
+            }
+        })
+        .collect(Collectors.joining("|")); // Combine field values to create a unique key
+}
