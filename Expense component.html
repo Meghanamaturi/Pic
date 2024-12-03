@@ -255,4 +255,33 @@ void testDuplicateRows(List<SensiRow> sValues, InputValidationResponse response)
 
     Assertions.assertTrue(duplicateErrorExists, "Expected duplicate row message not found.");
 }
+
+    @ParameterizedTest
+@MethodSource("inputParams")
+@DisplayName("Duplicate rows found")
+void testValidateForDuplicates(List<SensiRow> sValues, InputValidationResponse response) {
+    final ValidateTradeId validateTradeId = new ValidateTradeId();
+    validateTradeId.validate(sValues, response);
+
+    // Loop through each row and check if it's a DeltaRow
+    boolean actualData = false;
+    for (SensiRow row : response.getSensiValidationResponse().getRows()) {
+        if (row instanceof DeltaRow) {
+            // Check for the duplicate error message in the DeltaRow
+            if ("Duplicate rows found".equals(row.getErrorMessage())) {
+                actualData = true;
+                break;
+            }
+        } else if (row instanceof SensiRow) {
+            // Check for the duplicate error message in the SensiRow
+            if ("Duplicate rows found".equals(row.getErrorMessage())) {
+                actualData = true;
+                break;
+            }
+        }
+    }
+
+    final String expectedData = "Duplicate rows found";
+    Assertions.assertTrue(actualData, expectedData);
+}
     
