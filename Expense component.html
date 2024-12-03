@@ -208,3 +208,26 @@ private String generateKeyExcludingDeltaSensitivities(DeltaRow deltaRow) {
         .collect(Collectors.joining("|")); // Combine field values to create a unique key
 }
 
+
+
+
+        @ParameterizedTest
+@MethodSource("inputParams")
+@DisplayName("Duplicate rows should be flagged (ignoring deltaSensitivities)")
+void testValidateForDuplicates(List<SensiRow> sValues, InputValidationResponse response) {
+    final ValidateTradeId validateTradeId = new ValidateTradeId();
+
+    // Validate the rows for duplicates
+    validateTradeId.validate(sValues, response);
+
+    // Check the response for duplicate messages
+    String actualData = response.getSensiValidationResponse().getRows().stream()
+        .filter(row -> "Duplicate row found for tradeId 'GH_FXF_0621001@SGGHAW' (ignoring deltaSensitivities).".equals(row.getErrorMessage()))
+        .findFirst()
+        .map(SensiRow::getErrorMessage)
+        .orElse("");
+
+    final String expectedData = "Duplicate row found for tradeId 'GH_FXF_0621001@SGGHAW' (ignoring deltaSensitivities).";
+
+    Assertions.assertEquals(expectedData, actualData);
+}
