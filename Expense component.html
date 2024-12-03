@@ -231,3 +231,28 @@ void testValidateForDuplicates(List<SensiRow> sValues, InputValidationResponse r
 
     Assertions.assertEquals(expectedData, actualData);
 }
+
+
+
+    @ParameterizedTest
+@MethodSource("inputParams")
+@DisplayName("Test duplicate rows for a given TradeId (ignoring DeltaSensitivities)")
+void testDuplicateRows(List<SensiRow> sValues, InputValidationResponse response) {
+    final ValidateTradeId validateTradeId = new ValidateTradeId();
+
+    // Validate the rows for duplicates
+    validateTradeId.validate(sValues, response);
+
+    // Check if the response contains the duplicate message
+    String actualData = response.getOverallMsg();
+    final String expectedData = "Duplicate rows found";
+
+    Assertions.assertEquals(expectedData, actualData);
+
+    // Optionally, you can also verify specific rows were flagged
+    boolean duplicateErrorExists = response.getSensiValidationResponse().getRows().stream()
+        .anyMatch(row -> "Duplicate rows found".equals(row.getErrorMessage()));
+
+    Assertions.assertTrue(duplicateErrorExists, "Expected duplicate row message not found.");
+}
+    
